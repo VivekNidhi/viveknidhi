@@ -22,7 +22,7 @@ paginate = 5
 	profilepic = "img/profile.png"
 	
 	title = "Vivek Nidhi"
-	subtitle = "MY HUGO BLOG"
+	subtitle = "My Personal Site"
 
 	# Social buttons for sidebar
 	# Each of these are optional
@@ -34,19 +34,21 @@ paginate = 5
 	url = "https://twitter.com/viveknidhi"
 	[[params.socialbuttons]]
 	faicon = "linkedin"
-	url = "https://linkedin.com"
+	url = "https://www.linkedin.com/in/cloudtechie/"
 	[[params.socialbuttons]]
-	faicon = "google-plus"
-	url = "https://plus.google.com/+YourID"
-
+	
 	[[params.navlinks]]
 	name = "About"
 	url = "about"
 	
 	[[params.navlinks]]
-	name = "Blog"
-	url = ""
+	name = "Travel"
+	url = "travel/"
+
+    [[params.navlinks]]
+	name = "Tech"
+	url = "tech/"
 	
 	[[params.navlinks]]
-	name = "Tutorials"
-	url = "tutorial/"
+	name = "Contact"
+	url = "contact/"
