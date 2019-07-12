@@ -1,6 +1,5 @@
 baseurl = "http://example.com/"
-theme = "hugo-geo"
-themesdir = "../.."
+theme = "hugo-geo-theme"
 relativeURLs = false
 languageCode = "en-gb"
 title = "Vivek Nidhi"
