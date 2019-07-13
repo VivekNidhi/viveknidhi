@@ -6,9 +6,69 @@
     <description>Recent content on Vivek Nidhi</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-gb</language>
+    <lastBuildDate>Fri, 12 Jul 2019 20:36:21 +0100</lastBuildDate>
     
 	<atom:link href="http://example.com/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>About</title>
+      <link>http://example.com/about/</link>
+      <pubDate>Fri, 12 Jul 2019 20:36:21 +0100</pubDate>
+      
+      <guid>http://example.com/about/</guid>
+      <description>Vivek is a Techie. Who has a strong passion for Technology, Travel, Music and Sports. This website is a person website and blog.
+There will be lot of my personal options and my comments might contain code :-) Thanks a lot for visiting my website and I wish a great success for everyone!</description>
+    </item>
+    
+    <item>
+      <title>Travel</title>
+      <link>http://example.com/travel/</link>
+      <pubDate>Fri, 12 Jul 2019 16:17:50 +0100</pubDate>
+      
+      <guid>http://example.com/travel/</guid>
+      <description>Travel
+Road Trips
+Europe
+Asia
+Africa</description>
+    </item>
+    
+    <item>
+      <title>Tech</title>
+      <link>http://example.com/tech/</link>
+      <pubDate>Fri, 12 Jul 2019 16:17:43 +0100</pubDate>
+      
+      <guid>http://example.com/tech/</guid>
+      <description>The Technical Vivek Lot of write</description>
+    </item>
+    
+    <item>
+      <title>Contact</title>
+      <link>http://example.com/contact/</link>
+      <pubDate>Fri, 12 Jul 2019 16:17:33 +0100</pubDate>
+      
+      <guid>http://example.com/contact/</guid>
+      <description>As always email me if you think I can help you with vivek.nidhi [at] gmail.com</description>
+    </item>
+    
+    <item>
+      <title>Error</title>
+      <link>http://example.com/error/</link>
+      <pubDate>Fri, 12 Jul 2019 16:10:49 +0100</pubDate>
+      
+      <guid>http://example.com/error/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>Hello</title>
+      <link>http://example.com/hello/</link>
+      <pubDate>Fri, 12 Jul 2019 16:06:46 +0100</pubDate>
+      
+      <guid>http://example.com/hello/</guid>
+      <description></description>
+    </item>
     
   </channel>
 </rss>
