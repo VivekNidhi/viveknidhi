@@ -4,7 +4,7 @@ install:
 - hugo version 
 before_script:
 - rm rf public 
-sciprt:
+script:
 - hugo 
 branches:
  only:
