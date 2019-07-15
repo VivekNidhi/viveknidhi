@@ -1,5 +1,5 @@
 baseurl = "http://localhost:8080/"
-theme = "hugo-geo-theme"
+theme = "theme"
 relativeURLs = false
 languageCode = "en-gb"
 title = "Vivek Nidhi"
@@ -52,3 +52,10 @@ paginate = 5
 	[[params.navlinks]]
 	name = "Contact"
 	url = "contact/"
+scripts = [
+"//cdnjs.cloudflare.com/ajax/libs/highlight.js/8.8.0/languages/go.min.js",
+]
+
+css = [
+"//cdn.leafletjs.com/leaflet/v0.7.7/leaflet.css"
+]

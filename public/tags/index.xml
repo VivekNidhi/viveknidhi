@@ -2,39 +2,39 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Tags on Vivek Nidhi</title>
-    <link>http://viveknidhi.com/tags/</link>
+    <link>http://localhost:8080/tags/</link>
     <description>Recent content in Tags on Vivek Nidhi</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-gb</language>
     <lastBuildDate>Fri, 12 Jul 2019 20:36:21 +0100</lastBuildDate>
     
-	<atom:link href="http://viveknidhi.com/tags/index.xml" rel="self" type="application/rss+xml" />
+	<atom:link href="http://localhost:8080/tags/index.xml" rel="self" type="application/rss+xml" />
     
     
     <item>
       <title>GitHub</title>
-      <link>http://viveknidhi.com/tags/github/</link>
+      <link>http://localhost:8080/tags/github/</link>
       <pubDate>Fri, 12 Jul 2019 20:36:21 +0100</pubDate>
       
-      <guid>http://viveknidhi.com/tags/github/</guid>
+      <guid>http://localhost:8080/tags/github/</guid>
       <description></description>
     </item>
     
     <item>
       <title>markdown</title>
-      <link>http://viveknidhi.com/tags/markdown/</link>
+      <link>http://localhost:8080/tags/markdown/</link>
       <pubDate>Fri, 12 Jul 2019 20:36:21 +0100</pubDate>
       
-      <guid>http://viveknidhi.com/tags/markdown/</guid>
+      <guid>http://localhost:8080/tags/markdown/</guid>
       <description></description>
     </item>
     
     <item>
       <title>website</title>
-      <link>http://viveknidhi.com/tags/website/</link>
+      <link>http://localhost:8080/tags/website/</link>
       <pubDate>Fri, 12 Jul 2019 20:36:21 +0100</pubDate>
       
-      <guid>http://viveknidhi.com/tags/website/</guid>
+      <guid>http://localhost:8080/tags/website/</guid>
       <description></description>
     </item>
     
