@@ -1,4 +1,4 @@
-baseurl = "dq4xd48ttr8w3.cloudfront.net"
+baseurl = "dq4xd48ttr8w3.cloudfront.net/"
 theme = "hugo-geo-theme"
 relativeURLs = false
 languageCode = "en-gb"
