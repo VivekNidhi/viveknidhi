@@ -1,4 +1,4 @@
-baseurl = "https://pedantic-thompson-4d9ab8.netlify.com"
+baseurl = "viveknidhi.com"
 theme = "hugo-geo-theme"
 relativeURLs = false
 languageCode = "en-gb"
