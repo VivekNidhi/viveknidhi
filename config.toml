@@ -1,4 +1,4 @@
-baseurl = "http://www.viveknidhi.com"
+baseurl = "https://www.viveknidhi.com"
 theme = "hugo-geo-theme"
 relativeURLs = false
 languageCode = "en-gb"
