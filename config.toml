@@ -1,3 +1,4 @@
+baseurl = "http://www.viveknidhi.com"
 theme = "hugo-geo-theme"
 relativeURLs = false
 languageCode = "en-gb"
@@ -38,11 +39,11 @@ paginate = 5
 	
 	[[params.navlinks]]
 	name = "About"
-	url = "about/"
+	url = "/about"
 	
 	[[params.navlinks]]
 	name = "Travel"
-	url = "travel/"
+	url = "/travel"
 
     [[params.navlinks]]
 	name = "Tech"
