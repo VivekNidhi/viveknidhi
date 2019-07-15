@@ -2,12 +2,12 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Tutorials on Vivek Nidhi</title>
-    <link>http://localhost:8080/tutorials/</link>
+    <link>http://localhost:8080/public/tutorials/</link>
     <description>Recent content in Tutorials on Vivek Nidhi</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-gb</language>
     
-	<atom:link href="http://localhost:8080/tutorials/index.xml" rel="self" type="application/rss+xml" />
+	<atom:link href="http://localhost:8080/public/tutorials/index.xml" rel="self" type="application/rss+xml" />
     
     
   </channel>
