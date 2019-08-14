@@ -11,9 +11,7 @@ paginate = 5
 
 [params]
 	showglobe = true
-
-	favicon = "favicon.ico"
-	
+	favicon = "favicon.ico"	
 	analytics = "code-here"
 
 	email = "vivek.nidhi@gmail.com"
@@ -22,7 +20,7 @@ paginate = 5
 	
 	title = "Vivek Nidhi"
 	subtitle = "My Personal Site"
-
+I am tech consultant intersted in SAP, Cloud and UI. 
 	# Social buttons for sidebar
 	# Each of these are optional
 	[[params.socialbuttons]]
