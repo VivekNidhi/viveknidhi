@@ -20,7 +20,6 @@ paginate = 5
 	
 	title = "Vivek Nidhi"
 	subtitle = "My Personal Site"
-I am tech consultant intersted in SAP, Cloud and UI. 
 	# Social buttons for sidebar
 	# Each of these are optional
 	[[params.socialbuttons]]
