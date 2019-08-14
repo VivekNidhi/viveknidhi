@@ -19,7 +19,7 @@ paginate = 5
 	profilepic = "img/profile.png"
 	
 	title = "Vivek Nidhi"
-	subtitle = "My Personal Site"
+	subtitle = "My Personal Site - Have a nice day!"
 	# Social buttons for sidebar
 	# Each of these are optional
 	[[params.socialbuttons]]
