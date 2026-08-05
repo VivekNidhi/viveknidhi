@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Prompt injection, from first principles — Vivek Nidhi</title>
-<meta name="description" content="Why prompt injection is hard to fully patch, explained from first principles.">
+<meta name="description" content="Why prompt injection is structurally hard to fully patch: LLMs have no privileged channel separating instructions from data, and that's the whole problem.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
@@ -49,30 +49,70 @@
   .nav-links{ display:flex; gap: 24px; font-family:'JetBrains Mono', monospace; font-size: 13px; }
   .nav-links a{ color: var(--text-dim); }
   .nav-links a:hover{ color: var(--teal); }
+
   .hero{ padding: 56px 0 20px; }
   .eyebrow{ font-family:'JetBrains Mono', monospace; font-size: 12px; color: var(--amber); text-transform: uppercase; letter-spacing: 0.14em; margin: 0 0 18px; }
   .eyebrow::before{ content:"// "; color: var(--text-dim); }
-  .name{ font-family:'JetBrains Mono', monospace; font-weight: 800; font-size: clamp(24px, 4.4vw, 34px); color: #fff; margin: 14px 0 10px; letter-spacing: -0.01em; line-height:1.25; }
-  .meta{ font-family:'JetBrains Mono', monospace; font-size: 13px; color: var(--text-dim); margin: 0 0 18px; }
-  .draft{
-    border: 1px dashed rgba(245,166,35,0.4);
-    background: rgba(245,166,35,0.06);
-    border-radius: 8px;
-    padding: 16px 18px;
-    font-size: 14px;
-    color: var(--text-dim);
-    margin: 28px 0 8px;
-  }
-  .draft strong{ color: var(--amber); font-family:'JetBrains Mono', monospace; }
-  footer{
-    border-top: 1px solid var(--border);
-    padding: 26px 0 40px;
-    color: var(--text-dim);
-    font-family:'JetBrains Mono', monospace;
-    font-size: 12.5px;
-  }
+
+  .terminal{ border: 1px solid var(--border); border-radius: 10px; background: var(--bg-raised); box-shadow: 0 20px 60px -20px rgba(0,0,0,0.6); overflow: hidden; margin-bottom: 30px; }
+  .term-bar{ display:flex; align-items:center; gap:8px; padding: 10px 14px; border-bottom: 1px solid var(--border); background: #0c1319; }
+  .dot{ width:10px; height:10px; border-radius:50%; }
+  .dot.r{ background:#ff5f57; } .dot.y{ background:#febc2e; } .dot.g{ background:#28c840; }
+  .term-title{ margin-left: 8px; font-family:'JetBrains Mono', monospace; font-size:12px; color: var(--text-dim); }
+  .term-body{ padding: 20px 22px 24px; font-family:'JetBrains Mono', monospace; font-size: 13.5px; }
+  .kg{ color: #4ade80; }
+  .ko{ color: var(--amber); }
+  .k-out{ color: #c9d3da; margin: 3px 0 0; }
+
+  .name{ font-family:'JetBrains Mono', monospace; font-weight: 800; font-size: clamp(24px, 4.4vw, 34px); color: #fff; margin: 0 0 10px; letter-spacing: -0.01em; line-height:1.28; }
+  .role{ font-size: 15.5px; color: var(--teal); font-family:'JetBrains Mono', monospace; font-weight: 500; margin: 0 0 18px; }
+  .bio{ color: var(--text); font-size: 15.5px; }
+  .bio strong{ color:#fff; }
+  .meta{ font-family:'JetBrains Mono', monospace; font-size: 12.5px; color: var(--text-dim); margin: 18px 0 0; }
+
+  .tldr{ border: 1px solid rgba(74,222,128,0.35); background: rgba(74,222,128,0.07); border-radius: 8px; padding: 18px 20px; font-size: 14.5px; color: var(--text); margin: 30px 0 8px; }
+  .tldr strong{ color: var(--ok); font-family:'JetBrains Mono', monospace; }
+
+  main section{ padding: 40px 0; border-top: 1px solid var(--border); }
+  main section:first-of-type{ border-top:none; }
+  h2{ font-family:'JetBrains Mono', monospace; font-size: 13px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--text-dim); margin: 0 0 20px; }
+  h2::before{ content:"$ "; color: var(--teal); }
+  h3{ font-family:'JetBrains Mono', monospace; font-size: 15.5px; color: #fff; margin: 26px 0 10px; letter-spacing:-0.005em; }
+
+  p{ margin: 0 0 16px; color: var(--text); font-size: 15.5px; }
+  ul{ margin: 0 0 16px; padding-left: 20px; }
+  li{ margin-bottom: 8px; font-size: 15px; color: var(--text); }
+  strong{ color: #fff; }
+  code{ font-family:'JetBrains Mono', monospace; font-size: 0.88em; background: rgba(94,234,212,0.08); color: var(--teal); padding: 2px 5px; border-radius: 4px; }
+
+  figure{ margin: 26px 0; }
+  figcaption{ font-family:'JetBrains Mono', monospace; font-size: 12px; color: var(--text-dim); text-align:center; margin-top: 10px; }
+  .diagram-scroll{ overflow-x: auto; -webkit-overflow-scrolling: touch; border: 1px solid var(--border); border-radius: 10px; background: var(--bg-raised); padding: 18px 16px; }
+  .diagram-scroll svg{ display:block; }
+
+  .log{ font-family:'JetBrains Mono', monospace; font-size: 14px; }
+  .log-line{ display:flex; gap:14px; align-items:flex-start; padding: 14px 0; border-bottom: 1px dashed var(--border); }
+  .log-line:last-child{ border-bottom:none; }
+  .log-status{ flex: 0 0 auto; font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 4px; letter-spacing: 0.04em; margin-top: 2px; }
+  .status-pass{ color: var(--ok); background: rgba(74,222,128,0.1); border:1px solid rgba(74,222,128,0.3); }
+  .status-scan{ color: var(--teal); background: rgba(94,234,212,0.08); border:1px solid rgba(94,234,212,0.3); }
+  .status-risk{ color: var(--amber); background: rgba(245,166,35,0.1); border:1px solid rgba(245,166,35,0.35); }
+  .log-body strong{ color: var(--text); font-weight:600; }
+  .log-body p{ margin:4px 0 0; color: var(--text-dim); font-family:'Inter', sans-serif; font-size: 13.5px; }
+
+  .roadmap{ display:grid; grid-template-columns: repeat(auto-fit, minmax(210px,1fr)); gap:14px; margin-top: 4px; }
+  .card{ border:1px solid var(--border); background: var(--bg-raised); border-radius: 8px; padding: 16px 18px; }
+  .card h3{ margin:0 0 6px; font-size:13.5px; color:#fff; }
+  .card p{ margin:0; font-size:13px; color: var(--text-dim); }
+
+  .contact-links{ display:flex; flex-wrap:wrap; gap: 10px 22px; font-family:'JetBrains Mono', monospace; font-size: 14px; }
+  .contact-links .src{ display:block; color: var(--text-dim); font-size: 12px; margin-top: 2px; }
+
+  footer{ border-top: 1px solid var(--border); padding: 26px 0 40px; color: var(--text-dim); font-family:'JetBrains Mono', monospace; font-size: 12.5px; }
   footer a{ color: var(--text-dim); }
   footer a:hover{ color: var(--teal); }
+
+  @media (max-width: 560px){ .term-body{ font-size: 12px; } }
 </style>
 </head>
 <body>
@@ -90,15 +130,216 @@
 <main>
   <section class="hero wrap">
     <p class="eyebrow">./blog/prompt-injection-first-principles</p>
-    <h1 class="name">Prompt injection, from first principles</h1>
-    <p class="meta">7K · 30 Apr 2026</p>
 
-    <div class="draft">
-      <strong>draft --status</strong><br>
-      This post is a placeholder. The full explanation of why prompt injection is hard to fully
-      patch hasn't been added yet — see <a href="../owasp-llm-top10.html">LLM01 on the OWASP LLM
-      Top 10 page</a> for the short version in the meantime.
+    <div class="terminal">
+      <div class="term-bar">
+        <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+        <span class="term-title">vivek@secops: ~/blog</span>
+      </div>
+      <div class="term-body">
+        <div class="kg">┌─(vivek@secops)-[~/blog]</div>
+        <div><span class="kg">└─$ </span><span class="ko">cat ./prompt-injection-first-principles.md</span></div>
+        <p class="k-out">There is no privileged channel in a transformer that says "these tokens are instructions, those are data." That single fact is the whole vulnerability class.</p>
+      </div>
     </div>
+
+    <h1 class="name">Prompt injection, from first principles</h1>
+    <p class="role">Why no amount of prompt engineering fully patches this</p>
+    <p class="bio">
+      Every few months a new "prompt injection fix" makes the rounds — a better system prompt, a
+      classifier bolted on the front, a stricter set of delimiters. Some of it genuinely helps.
+      None of it closes the hole, because the hole isn't a bug in any particular model. It's a
+      direct consequence of how transformer-based LLMs represent text. Once you see why, you stop
+      waiting for the patch and start designing around it.
+    </p>
+    <p class="meta">Updated 05 Aug 2026 · ~7 min read</p>
+
+    <div class="tldr">
+      <strong>tl;dr --summary</strong><br>
+      Traditional software keeps code and data in separate channels — a SQL engine never executes
+      a bound parameter, no matter what string you put in it. An LLM has no equivalent separation:
+      system prompt, user input, and retrieved content are all just tokens in one shared context
+      window, and the model decides at inference time what looks like an instruction. That's
+      structurally the same code/data confusion that produces buffer overflows and SQL injection —
+      except here it's the architecture itself, not a specific implementation bug, so it can be
+      mitigated but not eliminated by a smarter prompt.
+    </div>
+  </section>
+
+  <section class="wrap">
+    <h2>the-structural-problem --no-privileged-channel</h2>
+    <p>
+      A parameterized SQL query works because the database engine treats the query template and
+      the bound values as fundamentally different things, handled by different code paths. The
+      value <code>'; DROP TABLE users; --</code> passed as a bound parameter is never parsed as
+      SQL — it's inert data, full stop, regardless of what it looks like. That guarantee lives in
+      the engine, not in how carefully the input was worded.
+    </p>
+    <p>
+      LLMs don't have that engine-level guarantee. A system prompt, a user's message, and a
+      paragraph pulled in from a retrieved document all get tokenized and concatenated into the
+      same context window, then processed through the same shared embedding space. There's no
+      tag on any token that means "this one is authoritative, this one is untrusted content."
+      The model infers what's an instruction from patterns in the text itself — which means
+      anything that pattern-matches convincingly enough to "instruction" can act like one,
+      regardless of which part of the prompt it arrived in. Recent formal work on this describes
+      it plainly: in shared-embedding sequence models without an enforced control/data boundary,
+      perfect prevention of prompt injection is not an engineering gap to be closed, it's
+      mathematically unreachable with this architecture. It's the same code/data confusion that
+      produces buffer overflows in C and injection flaws in dynamically built SQL — just moved
+      into a new substrate.
+    </p>
+
+    <figure>
+      <div class="diagram-scroll">
+        <svg viewBox="0 0 900 330" style="min-width:700px;width:100%;" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Comparison: a SQL engine keeps code and data in separate channels, while an LLM merges system prompt, user input, and retrieved content into one shared token stream">
+          <defs>
+            <marker id="arrow-pi" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M0,0 L10,5 L0,10 z" fill="var(--text-dim)"></path>
+            </marker>
+          </defs>
+
+          <text x="220" y="26" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="12" font-weight="700" fill="var(--ok)">TRADITIONAL APP — TWO CHANNELS</text>
+          <text x="680" y="26" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="12" font-weight="700" fill="var(--amber)">LLM APP — ONE SHARED STREAM</text>
+          <line x1="450" y1="10" x2="450" y2="320" stroke="var(--border)" stroke-dasharray="4 4"></line>
+
+          <rect x="30" y="45" width="180" height="46" rx="6" fill="var(--bg-raised)" stroke="var(--teal)"></rect>
+          <text x="120" y="73" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="12" fill="var(--text)">Query template</text>
+
+          <rect x="230" y="45" width="180" height="46" rx="6" fill="var(--bg-raised)" stroke="var(--amber)"></rect>
+          <text x="320" y="73" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="12" fill="var(--text)">User input</text>
+
+          <line x1="120" y1="91" x2="120" y2="145" stroke="var(--teal)" stroke-width="2" marker-end="url(#arrow-pi)"></line>
+          <text x="100" y="122" text-anchor="end" font-family="'JetBrains Mono',monospace" font-size="10" fill="var(--teal)">CODE</text>
+          <line x1="320" y1="91" x2="320" y2="145" stroke="var(--amber)" stroke-width="2" stroke-dasharray="4 3" marker-end="url(#arrow-pi)"></line>
+          <text x="340" y="122" text-anchor="start" font-family="'JetBrains Mono',monospace" font-size="10" fill="var(--amber)">DATA</text>
+
+          <rect x="50" y="150" width="340" height="80" rx="8" fill="var(--bg-raised)" stroke="var(--ok)" stroke-width="1.5"></rect>
+          <text x="220" y="178" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="13" font-weight="700" fill="var(--ok)">SQL engine</text>
+          <text x="220" y="198" text-anchor="middle" font-family="Inter,sans-serif" font-size="11" fill="var(--text-dim)">bound parameter stays inert —</text>
+          <text x="220" y="213" text-anchor="middle" font-family="Inter,sans-serif" font-size="11" fill="var(--text-dim)">never parsed as code, guaranteed by the engine</text>
+
+          <rect x="500" y="35" width="180" height="42" rx="6" fill="var(--bg-raised)" stroke="var(--amber)"></rect>
+          <text x="590" y="61" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="12" fill="var(--text)">System prompt</text>
+
+          <rect x="500" y="90" width="180" height="42" rx="6" fill="var(--bg-raised)" stroke="var(--amber)"></rect>
+          <text x="590" y="116" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="12" fill="var(--text)">User input</text>
+
+          <rect x="500" y="145" width="180" height="42" rx="6" fill="var(--bg-raised)" stroke="var(--amber)"></rect>
+          <text x="590" y="163" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="11" fill="var(--text)">Retrieved doc /</text>
+          <text x="590" y="177" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="11" fill="var(--text)">tool output</text>
+
+          <line x1="680" y1="56" x2="740" y2="220" stroke="var(--amber)" stroke-width="1.5" stroke-dasharray="4 3"></line>
+          <line x1="680" y1="111" x2="740" y2="220" stroke="var(--amber)" stroke-width="1.5" stroke-dasharray="4 3"></line>
+          <line x1="680" y1="166" x2="740" y2="220" stroke="var(--amber)" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#arrow-pi)"></line>
+
+          <rect x="530" y="225" width="300" height="46" rx="6" fill="var(--bg-raised)" stroke="var(--amber)" stroke-width="1.5"></rect>
+          <text x="680" y="253" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="12" font-weight="700" fill="var(--amber)">Token stream (context window)</text>
+
+          <line x1="680" y1="271" x2="680" y2="285" stroke="var(--amber)" stroke-width="2" marker-end="url(#arrow-pi)"></line>
+
+          <rect x="560" y="288" width="240" height="34" rx="6" fill="var(--bg-raised)" stroke="var(--amber)" stroke-width="1.5"></rect>
+          <text x="680" y="309" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="11" fill="var(--text)">Model — infers what's an</text>
+        </svg>
+      </div>
+      <figcaption>Fig. 1 — A SQL engine enforces the code/data boundary structurally. An LLM has no equivalent enforcement point: every source lands in the same stream, and "instruction" is just a pattern the model recognizes.</figcaption>
+    </figure>
+  </section>
+
+  <section class="wrap">
+    <h2>direct-vs-indirect --two-flavors-same-cause</h2>
+    <p>
+      <strong>Direct injection</strong> is the obvious case: a user types "ignore your previous
+      instructions and…" straight into the chat box. It's the easiest to defend against precisely
+      because it's obvious — a system prompt reminder or a classifier on user turns catches a lot
+      of it.
+    </p>
+    <p>
+      <strong>Indirect injection</strong> is the harder, more consequential version, and it's the
+      one that matters once an LLM is wired up to tools, browsing, or a mailbox. The instructions
+      don't come from the person talking to the model — they're hidden in a webpage, a PDF, a
+      support ticket, or a dataset the model reads <em>as part of doing its job</em>, and because
+      there's no privileged channel, the model has no structural reason to trust the user's
+      original goal over text it just ingested from a document. This is exactly the mechanism
+      behind <strong>OWASP LLM01 (Prompt Injection)</strong> and its agentic cousin
+      <strong>ASI01 (Agent Goal Hijack)</strong> from the
+      <a href="../owasp-agentic-top10.html">OWASP Agentic Top 10</a> — and it's the same
+      objective-drift pattern I wrote about in
+      <a href="hugging-face-incident-postmortem.html">the Hugging Face incident post-mortem</a>,
+      just without a human attacker required at all. An agent chasing an underspecified goal can
+      talk itself into the wrong action with no injected text in sight; add a hostile document
+      into its context and the same mechanism becomes a deliberate attack surface.
+    </p>
+  </section>
+
+  <section class="wrap">
+    <h2>why-filtering-fails --the-input-space-is-too-big</h2>
+    <p>
+      Keyword and pattern filters catch the injection attempts someone already thought of. They
+      lose to the ones nobody wrote a rule for, and the space of rephrasings is effectively
+      unbounded: paraphrase the instruction, translate it into another language mid-prompt, split
+      it across multiple turns, encode it in base64 or leetspeak, hide it in invisible Unicode
+      characters, or bury it in a code comment inside a file the model is asked to summarize. Once
+      models went multimodal, the same trick works through an image with text baked into the
+      pixels, or audio with an instruction spoken under the audible content — the injection doesn't
+      need to be readable to a filter scanning raw text if the model itself can still perceive it.
+      Every one of these is the same underlying attack wearing a different outfit, and a filter
+      built for last month's outfit doesn't generalize to next month's.
+    </p>
+  </section>
+
+  <section class="wrap">
+    <h2>what-actually-helps --defense-in-depth</h2>
+    <p>
+      None of this means the situation is hopeless — it means the fix has to be architectural, not
+      linguistic. The defenses that hold up in practice reduce blast radius and add friction rather
+      than promising prevention:
+    </p>
+    <div class="roadmap">
+      <div class="card">
+        <h3>Privilege-separated agents</h3>
+        <p>Patterns like CaMeL split the job: a privileged planner works from the trusted user goal, while a quarantined executor processes untrusted content with no tool access of its own, and a policy layer checks every tool call against tracked data provenance before it runs.</p>
+      </div>
+      <div class="card">
+        <h3>Structured tool calls, typed arguments</h3>
+        <p>Constrain what a model can ask a tool to do with a narrow, typed schema instead of free-form strings. An injected instruction can still try to trigger a call, but it can't smuggle arbitrary payloads through a field that only accepts an enum.</p>
+      </div>
+      <div class="card">
+        <h3>Spotlighting and sandwiching</h3>
+        <p>Clearly delimiting untrusted content and repeating the real instruction after it measurably reduces success rates in practice — it's a mitigation, not a boundary, and should never be the only layer.</p>
+      </div>
+      <div class="card">
+        <h3>Output and action validation</h3>
+        <p>Validate what the model produces — and what it's about to do — against a schema or policy before it reaches a database, a shell, or an API, the same way you'd never trust raw user input downstream without checking it first.</p>
+      </div>
+      <div class="card">
+        <h3>Assume it eventually succeeds</h3>
+        <p>Design the system so a successful injection is contained, logged, and reversible — least-privilege credentials, human approval on consequential actions, span-level observability that turns a bypass into an alert instead of a silent success.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap">
+    <h2>my-take --closing-thoughts</h2>
+    <p>
+      The framing that changed how I think about this: prompt injection isn't a content-moderation
+      problem, it's an access-control problem wearing a content-moderation costume. Nobody expects
+      a firewall to read every packet and decide if it "feels malicious" — we build segmentation,
+      least privilege, and validation at trust boundaries instead, and accept that perimeter
+      defenses will eventually be bypassed. LLM-integrated systems need the exact same posture,
+      because the model itself cannot be the trust boundary. It's the thing operating
+      <em>inside</em> the boundary, reading whatever crosses it.
+    </p>
+  </section>
+
+  <section class="wrap">
+    <h2>sources --further-reading</h2>
+    <div class="contact-links">
+      <a href="https://arxiv.org/html/2606.27567" target="_blank" rel="noopener">On the Inseparability of Instructions and Data →<span class="src">arXiv, 2606.27567</span></a>
+      <a href="https://arxiv.org/pdf/2601.09923" target="_blank" rel="noopener">CaMeLs Can Use Computers Too →<span class="src">arXiv, 2601.09923</span></a>
+      <a href="https://genai.owasp.org/" target="_blank" rel="noopener">OWASP GenAI Security Project →<span class="src">genai.owasp.org</span></a>
+    </div>
+    <p style="margin-top:22px;">Related on this site: <a href="owasp-llm-top10-notes.html">Working through the OWASP LLM Top 10</a> · <a href="hugging-face-incident-postmortem.html">Reading the Hugging Face incident post-mortem</a></p>
   </section>
 </main>
 

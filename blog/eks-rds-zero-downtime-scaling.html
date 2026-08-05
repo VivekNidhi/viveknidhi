@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Scaling RDS storage online with zero downtime — Vivek Nidhi</title>
-<meta name="description" content="Scaling RDS storage online with zero downtime, and what I got wrong the first time.">
+<meta name="description" content="Scaling RDS storage online with zero downtime, and what I got wrong the first time — gp3, storage autoscaling, and the 6-hour cooldown that nearly bit us.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
@@ -49,30 +49,70 @@
   .nav-links{ display:flex; gap: 24px; font-family:'JetBrains Mono', monospace; font-size: 13px; }
   .nav-links a{ color: var(--text-dim); }
   .nav-links a:hover{ color: var(--teal); }
+
   .hero{ padding: 56px 0 20px; }
   .eyebrow{ font-family:'JetBrains Mono', monospace; font-size: 12px; color: var(--amber); text-transform: uppercase; letter-spacing: 0.14em; margin: 0 0 18px; }
   .eyebrow::before{ content:"// "; color: var(--text-dim); }
-  .name{ font-family:'JetBrains Mono', monospace; font-weight: 800; font-size: clamp(24px, 4.4vw, 34px); color: #fff; margin: 14px 0 10px; letter-spacing: -0.01em; line-height:1.25; }
-  .meta{ font-family:'JetBrains Mono', monospace; font-size: 13px; color: var(--text-dim); margin: 0 0 18px; }
-  .draft{
-    border: 1px dashed rgba(245,166,35,0.4);
-    background: rgba(245,166,35,0.06);
-    border-radius: 8px;
-    padding: 16px 18px;
-    font-size: 14px;
-    color: var(--text-dim);
-    margin: 28px 0 8px;
-  }
-  .draft strong{ color: var(--amber); font-family:'JetBrains Mono', monospace; }
-  footer{
-    border-top: 1px solid var(--border);
-    padding: 26px 0 40px;
-    color: var(--text-dim);
-    font-family:'JetBrains Mono', monospace;
-    font-size: 12.5px;
-  }
+
+  .terminal{ border: 1px solid var(--border); border-radius: 10px; background: var(--bg-raised); box-shadow: 0 20px 60px -20px rgba(0,0,0,0.6); overflow: hidden; margin-bottom: 30px; }
+  .term-bar{ display:flex; align-items:center; gap:8px; padding: 10px 14px; border-bottom: 1px solid var(--border); background: #0c1319; }
+  .dot{ width:10px; height:10px; border-radius:50%; }
+  .dot.r{ background:#ff5f57; } .dot.y{ background:#febc2e; } .dot.g{ background:#28c840; }
+  .term-title{ margin-left: 8px; font-family:'JetBrains Mono', monospace; font-size:12px; color: var(--text-dim); }
+  .term-body{ padding: 20px 22px 24px; font-family:'JetBrains Mono', monospace; font-size: 13.5px; }
+  .kg{ color: #4ade80; }
+  .ko{ color: var(--amber); }
+  .k-out{ color: #c9d3da; margin: 3px 0 0; }
+
+  .name{ font-family:'JetBrains Mono', monospace; font-weight: 800; font-size: clamp(24px, 4.4vw, 34px); color: #fff; margin: 0 0 10px; letter-spacing: -0.01em; line-height:1.28; }
+  .role{ font-size: 15.5px; color: var(--teal); font-family:'JetBrains Mono', monospace; font-weight: 500; margin: 0 0 18px; }
+  .bio{ color: var(--text); font-size: 15.5px; }
+  .bio strong{ color:#fff; }
+  .meta{ font-family:'JetBrains Mono', monospace; font-size: 12.5px; color: var(--text-dim); margin: 18px 0 0; }
+
+  .tldr{ border: 1px solid rgba(74,222,128,0.35); background: rgba(74,222,128,0.07); border-radius: 8px; padding: 18px 20px; font-size: 14.5px; color: var(--text); margin: 30px 0 8px; }
+  .tldr strong{ color: var(--ok); font-family:'JetBrains Mono', monospace; }
+
+  main section{ padding: 40px 0; border-top: 1px solid var(--border); }
+  main section:first-of-type{ border-top:none; }
+  h2{ font-family:'JetBrains Mono', monospace; font-size: 13px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--text-dim); margin: 0 0 20px; }
+  h2::before{ content:"$ "; color: var(--teal); }
+  h3{ font-family:'JetBrains Mono', monospace; font-size: 15.5px; color: #fff; margin: 26px 0 10px; letter-spacing:-0.005em; }
+
+  p{ margin: 0 0 16px; color: var(--text); font-size: 15.5px; }
+  ul{ margin: 0 0 16px; padding-left: 20px; }
+  li{ margin-bottom: 8px; font-size: 15px; color: var(--text); }
+  strong{ color: #fff; }
+  code{ font-family:'JetBrains Mono', monospace; font-size: 0.9em; background: rgba(94,234,212,0.08); color: var(--teal); padding: 2px 5px; border-radius: 4px; }
+
+  figure{ margin: 26px 0; }
+  figcaption{ font-family:'JetBrains Mono', monospace; font-size: 12px; color: var(--text-dim); text-align:center; margin-top: 10px; }
+  .diagram-scroll{ overflow-x: auto; -webkit-overflow-scrolling: touch; border: 1px solid var(--border); border-radius: 10px; background: var(--bg-raised); padding: 18px 16px; }
+  .diagram-scroll svg{ display:block; }
+
+  .log{ font-family:'JetBrains Mono', monospace; font-size: 14px; }
+  .log-line{ display:flex; gap:14px; align-items:flex-start; padding: 14px 0; border-bottom: 1px dashed var(--border); }
+  .log-line:last-child{ border-bottom:none; }
+  .log-status{ flex: 0 0 auto; font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 4px; letter-spacing: 0.04em; margin-top: 2px; }
+  .status-pass{ color: var(--ok); background: rgba(74,222,128,0.1); border:1px solid rgba(74,222,128,0.3); }
+  .status-scan{ color: var(--teal); background: rgba(94,234,212,0.08); border:1px solid rgba(94,234,212,0.3); }
+  .status-risk{ color: var(--amber); background: rgba(245,166,35,0.1); border:1px solid rgba(245,166,35,0.35); }
+  .log-body strong{ color: var(--text); font-weight:600; }
+  .log-body p{ margin:4px 0 0; color: var(--text-dim); font-family:'Inter', sans-serif; font-size: 13.5px; }
+
+  .roadmap{ display:grid; grid-template-columns: repeat(auto-fit, minmax(210px,1fr)); gap:14px; margin-top: 4px; }
+  .card{ border:1px solid var(--border); background: var(--bg-raised); border-radius: 8px; padding: 16px 18px; }
+  .card h3{ margin:0 0 6px; font-size:13.5px; color:#fff; }
+  .card p{ margin:0; font-size:13px; color: var(--text-dim); }
+
+  .contact-links{ display:flex; flex-wrap:wrap; gap: 10px 22px; font-family:'JetBrains Mono', monospace; font-size: 14px; }
+  .contact-links .src{ display:block; color: var(--text-dim); font-size: 12px; margin-top: 2px; }
+
+  footer{ border-top: 1px solid var(--border); padding: 26px 0 40px; color: var(--text-dim); font-family:'JetBrains Mono', monospace; font-size: 12.5px; }
   footer a{ color: var(--text-dim); }
   footer a:hover{ color: var(--teal); }
+
+  @media (max-width: 560px){ .term-body{ font-size: 12px; } }
 </style>
 </head>
 <body>
@@ -90,13 +130,166 @@
 <main>
   <section class="hero wrap">
     <p class="eyebrow">./blog/eks-rds-zero-downtime-scaling</p>
-    <h1 class="name">Scaling RDS storage online with zero downtime</h1>
-    <p class="meta">12K · 02 Jun 2026</p>
 
-    <div class="draft">
-      <strong>draft --status</strong><br>
-      This post is a placeholder. The full write-up on scaling RDS storage online with zero
-      downtime — and what went wrong the first time — hasn't been added yet.
+    <div class="terminal">
+      <div class="term-bar">
+        <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+        <span class="term-title">vivek@secops: ~/blog</span>
+      </div>
+      <div class="term-body">
+        <div class="kg">┌─(vivek@secops)-[~/blog]</div>
+        <div><span class="kg">└─$ </span><span class="ko">cat ./eks-rds-zero-downtime-scaling.md</span></div>
+        <p class="k-out">RDS storage growth doesn't have to mean a maintenance window — but "zero downtime" and "zero risk" aren't the same claim, and I learned the difference the hard way.</p>
+      </div>
+    </div>
+
+    <h1 class="name">Scaling RDS storage online with zero downtime</h1>
+    <p class="role">And what I got wrong the first time</p>
+    <p class="bio">
+      A service backed by RDS for PostgreSQL was quietly eating through its allocated storage
+      faster than anyone expected, and the "fix" was supposed to be boring: bump the storage,
+      let RDS do it online, move on. It mostly was boring — right up until autoscaling tried to
+      fire a second time inside its own cooldown window and couldn't. Here's how online storage
+      modification actually behaves under the hood, and the two things I'd tell myself to check
+      before doing this in production again.
+    </p>
+    <p class="meta">Updated 05 Aug 2026 · ~7 min read · stack: RDS for PostgreSQL, gp3, Terraform</p>
+
+    <div class="tldr">
+      <strong>tl;dr --summary</strong><br>
+      Modifying RDS storage — size, IOPS, or throughput on gp3 — applies online with no reboot and
+      essentially no downtime in the traditional sense. But the instance enters a
+      <code>storage-optimization</code> state afterward with measurably elevated latency, autoscaling
+      is frozen for at least 6 hours (or until optimization finishes, whichever is longer) and capped
+      at four modifications per rolling 24 hours, and storage only ever scales up. Set your
+      thresholds with that cooldown in mind, or a genuine traffic spike can land you in
+      <code>storage-full</code> with no lever left to pull.
+    </div>
+  </section>
+
+  <section class="wrap">
+    <h2>how-it-actually-works --gp3-online-modify</h2>
+    <p>
+      Since RDS moved General Purpose storage to gp3, storage size, provisioned IOPS, and
+      throughput are three independent dials — you're no longer forced to over-provision size
+      just to buy more IOPS the way gp2 required. Modifying any of them is an online operation:
+      no reboot, no failover, no maintenance window required. Amazon's own storage autoscaling
+      feature works the same way — turning it on for an existing instance takes effect
+      immediately, with no restart and no downtime.
+    </p>
+    <p>
+      What "online" doesn't mean is "invisible." Once a modification starts, the instance sits in
+      a <code>storage-optimization</code> status while the underlying volume rebalances, and AWS
+      is explicit that you should expect elevated latency — single-digit milliseconds — during
+      that window. On a service with a tight p99 budget, that's very noticeable even though
+      nothing "went down."
+    </p>
+
+    <figure>
+      <div class="diagram-scroll">
+        <svg viewBox="0 0 880 200" style="min-width:680px;width:100%;" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="RDS storage modification state flow: available, modifying, storage-optimization, available again, then a 6 hour cooldown before the next change">
+          <defs>
+            <marker id="arrow-rds" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M0,0 L10,5 L0,10 z" fill="var(--text-dim)"></path>
+            </marker>
+          </defs>
+
+          <rect x="20" y="60" width="170" height="60" rx="8" fill="var(--bg-raised)" stroke="var(--ok)" stroke-width="1.5"></rect>
+          <text x="105" y="86" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="13" font-weight="700" fill="var(--ok)">available</text>
+          <text x="105" y="104" text-anchor="middle" font-family="Inter,sans-serif" font-size="10.5" fill="var(--text-dim)">threshold crossed</text>
+
+          <line x1="190" y1="90" x2="230" y2="90" stroke="var(--text-dim)" stroke-width="2" marker-end="url(#arrow-rds)"></line>
+
+          <rect x="230" y="60" width="170" height="60" rx="8" fill="var(--bg-raised)" stroke="var(--amber)" stroke-width="1.5"></rect>
+          <text x="315" y="86" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="13" font-weight="700" fill="var(--amber)">modifying</text>
+          <text x="315" y="104" text-anchor="middle" font-family="Inter,sans-serif" font-size="10.5" fill="var(--text-dim)">no reboot, no failover</text>
+
+          <line x1="400" y1="90" x2="440" y2="90" stroke="var(--text-dim)" stroke-width="2" marker-end="url(#arrow-rds)"></line>
+
+          <rect x="440" y="60" width="200" height="60" rx="8" fill="var(--bg-raised)" stroke="var(--amber)" stroke-width="1.5"></rect>
+          <text x="540" y="80" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="13" font-weight="700" fill="var(--amber)">storage-optimization</text>
+          <text x="540" y="98" text-anchor="middle" font-family="Inter,sans-serif" font-size="10.5" fill="var(--text-dim)">elevated single-digit ms latency</text>
+          <text x="540" y="112" text-anchor="middle" font-family="Inter,sans-serif" font-size="10.5" fill="var(--text-dim)">autoscaling frozen here too</text>
+
+          <line x1="640" y1="90" x2="680" y2="90" stroke="var(--text-dim)" stroke-width="2" marker-end="url(#arrow-rds)"></line>
+
+          <rect x="680" y="60" width="180" height="60" rx="8" fill="var(--bg-raised)" stroke="var(--ok)" stroke-width="1.5"></rect>
+          <text x="770" y="86" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="13" font-weight="700" fill="var(--ok)">available</text>
+          <text x="770" y="104" text-anchor="middle" font-family="Inter,sans-serif" font-size="10.5" fill="var(--text-dim)">fully optimized</text>
+
+          <line x1="230" y1="140" x2="860" y2="140" stroke="var(--border)" stroke-width="1" stroke-dasharray="3 3"></line>
+          <line x1="230" y1="135" x2="230" y2="145" stroke="var(--border)"></line>
+          <line x1="860" y1="135" x2="860" y2="145" stroke="var(--border)"></line>
+          <text x="545" y="162" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="11.5" font-weight="700" fill="var(--text-dim)">≥ 6 hour cooldown, max 4 modifications / 24h</text>
+          <text x="545" y="180" text-anchor="middle" font-family="Inter,sans-serif" font-size="10.5" fill="var(--text-dim)">next storage change can't start until this clears — even if you're already back over threshold</text>
+        </svg>
+      </div>
+      <figcaption>Fig. 1 — The state flow behind "online" storage modification. Nothing here takes the DB offline, but two windows (optimization latency, then cooldown) both cost you real headroom.</figcaption>
+    </figure>
+  </section>
+
+  <section class="wrap">
+    <h2>what-went-wrong --the-first-time</h2>
+    <p>
+      Storage autoscaling was on, with allocated storage at 500 GiB and a max threshold set at
+      2 TiB — comfortable-looking headroom on paper. A backfill job that weekend wrote faster
+      than expected, autoscaling correctly kicked in and grew the volume once, and everything
+      looked fine. Then the backfill kept going, crossed the free-space threshold a second time
+      a couple of hours later, and autoscaling didn't fire. It couldn't: RDS won't scale storage
+      again until at least 6 hours have passed since the last modification, or until
+      <code>storage-optimization</code> finishes, whichever is later — and separately, it caps you
+      at four storage modifications in any rolling 24-hour window. The instance sat at
+      <code>storage-full</code> for the rest of that window while the backfill job errored out
+      trying to write.
+    </p>
+    <p>
+      Two details made this worse than it needed to be. First, each autoscaling step only grows
+      storage by the greatest of 10 GiB, 10% of current allocated storage, or RDS's own predicted
+      7-hour growth — which is conservative by design, but means a genuinely bursty write pattern
+      can outrun the increment size even when the <em>ceiling</em> looks generous. Second, storage
+      autoscaling only ever scales up. There's no shrink-back once the volume grows, so every
+      panic-driven jump becomes a permanent line item on the bill — which is its own argument for
+      getting the threshold right up front instead of relying on autoscaling as the whole plan.
+    </p>
+  </section>
+
+  <section class="wrap">
+    <h2>runbook --what-id-check-next-time</h2>
+    <div class="roadmap">
+      <div class="card">
+        <h3>Size the threshold for the cooldown, not the average</h3>
+        <p>Set the free-space threshold high enough to absorb your worst realistic write burst over a 6+ hour window, not your average daily growth rate.</p>
+      </div>
+      <div class="card">
+        <h3>Alarm on FreeStorageSpace directly</h3>
+        <p>Don't rely on autoscaling as your only signal. A CloudWatch alarm on low free space, separate from the autoscaling trigger, buys a human a chance to intervene before <code>storage-full</code>.</p>
+      </div>
+      <div class="card">
+        <h3>Know your modification budget</h3>
+        <p>Four storage changes per rolling 24 hours, across manual and automatic modifications combined. A manual bump during an incident can eat the budget autoscaling needed.</p>
+      </div>
+      <div class="card">
+        <h3>Expect the latency, don't debug it live</h3>
+        <p><code>storage-optimization</code> causes real, expected single-digit-millisecond latency increases. Know what that looks like on your dashboards before it happens at 2am.</p>
+      </div>
+      <div class="card">
+        <h3>Tune gp3 IOPS/throughput independently</h3>
+        <p>If the real problem is I/O, not capacity, raising provisioned IOPS or throughput on gp3 directly is often the cheaper, more targeted fix than growing size to chase IOPS the way gp2 required.</p>
+      </div>
+      <div class="card">
+        <h3>Remember scaling only goes up</h3>
+        <p>There's no autoscaling shrink path. Treat every scale-up as permanent, and size deliberately rather than letting bursts set your bill.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap">
+    <h2>sources --further-reading</h2>
+    <div class="contact-links">
+      <a href="https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_PIOPS.Autoscaling.html" target="_blank" rel="noopener">Managing capacity with RDS storage autoscaling →<span class="src">AWS documentation</span></a>
+      <a href="https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_PIOPS.gp3.html" target="_blank" rel="noopener">Modifying gp3 storage settings →<span class="src">AWS documentation</span></a>
+      <a href="https://aws.amazon.com/about-aws/whats-new/2026/07/amazon-rds-upto-four-storage-modifications-24-hours/" target="_blank" rel="noopener">Up to four storage modifications per 24h →<span class="src">AWS What's New, Jul 2026</span></a>
+      <a href="https://repost.aws/knowledge-center/rds-autoscaling-low-free-storage" target="_blank" rel="noopener">Resolving low free storage with autoscaling active →<span class="src">AWS re:Post knowledge center</span></a>
     </div>
   </section>
 </main>
