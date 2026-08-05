@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OWASP Top 10 for Agentic Applications (2026) — Vivek Nidhi</title>
+<meta name="description" content="A field guide to the OWASP Top 10 for Agentic Applications, 2026 — threat modelling for autonomous, tool-using AI agents.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #0a0f14;
+    --bg-raised: #0f1720;
+    --grid-line: rgba(94, 234, 212, 0.06);
+    --text: #dfe7ec;
+    --text-dim: #7c8a97;
+    --teal: #5eead4;
+    --amber: #f5a623;
+    --ok: #4ade80;
+    --border: #1c2830;
+  }
+
+  *{ box-sizing: border-box; }
+
+  html{ scroll-behavior: smooth; }
+
+  body{
+    margin:0;
+    background:
+      linear-gradient(var(--grid-line) 1px, transparent 1px) 0 0/40px 40px,
+      linear-gradient(90deg, var(--grid-line) 1px, transparent 1px) 0 0/40px 40px,
+      var(--bg);
+    color: var(--text);
+    font-family: 'Inter', system-ui, sans-serif;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  a{ color: var(--teal); text-decoration: none; }
+  a:hover{ text-decoration: underline; }
+  a:focus-visible, button:focus-visible{ outline: 2px solid var(--teal); outline-offset: 3px; }
+
+  .wrap{ max-width: 860px; margin: 0 auto; padding: 0 24px; }
+
+  header{
+    border-bottom: 1px solid var(--border);
+    background: rgba(10,15,20,0.85);
+    backdrop-filter: blur(6px);
+    position: sticky; top:0; z-index: 10;
+  }
+  .nav{
+    display:flex; align-items:center; justify-content:space-between;
+    padding: 16px 0;
+  }
+  .brand{
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--text);
+    letter-spacing: 0.02em;
+  }
+  .brand span{ color: var(--teal); }
+  .nav-links{ display:flex; gap: 24px; font-family:'JetBrains Mono', monospace; font-size: 13px; }
+  .nav-links a{ color: var(--text-dim); }
+  .nav-links a:hover{ color: var(--teal); }
+
+  .hero{ padding: 56px 0 40px; }
+  .eyebrow{
+    font-family:'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--amber);
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    margin: 0 0 18px;
+  }
+  .eyebrow::before{ content:"// "; color: var(--text-dim); }
+
+  .terminal{
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--bg-raised);
+    box-shadow: 0 20px 60px -20px rgba(0,0,0,0.6);
+    overflow: hidden;
+    margin-bottom: 34px;
+  }
+  .term-bar{
+    display:flex; align-items:center; gap:8px;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    background: #0c1319;
+  }
+  .dot{ width:10px; height:10px; border-radius:50%; }
+  .dot.r{ background:#ff5f57; } .dot.y{ background:#febc2e; } .dot.g{ background:#28c840; }
+  .term-title{ margin-left: 8px; font-family:'JetBrains Mono', monospace; font-size:12px; color: var(--text-dim); }
+
+  .term-body{ padding: 22px 24px 28px; font-family:'JetBrains Mono', monospace; font-size: 15px; }
+  .kg{ color: #4ade80; }
+  .kc{ color: #5eead4; }
+  .ko{ color: var(--amber); }
+  .kp{ color: #c792ea; }
+  .k-out{ color: #c9d3da; margin: 3px 0 14px; }
+
+  .name{
+    font-family:'JetBrains Mono', monospace;
+    font-weight: 800;
+    font-size: clamp(26px, 4.6vw, 38px);
+    color: #fff;
+    margin: 14px 0 6px;
+    letter-spacing: -0.01em;
+  }
+  .role{
+    font-size: 16px;
+    color: var(--teal);
+    font-family:'JetBrains Mono', monospace;
+    font-weight: 500;
+    margin: 0 0 18px;
+  }
+  .bio{ max-width: 640px; color: var(--text); font-size: 16px; }
+  .bio strong{ color:#fff; }
+
+  section{ padding: 44px 0; border-top: 1px solid var(--border); }
+  h2{
+    font-family:'JetBrains Mono', monospace;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--text-dim);
+    margin: 0 0 22px;
+  }
+  h2::before{ content:"$ "; color: var(--teal); }
+
+  .log{ font-family:'JetBrains Mono', monospace; font-size: 14px; }
+  .log-line{
+    display:flex; gap:14px; align-items:flex-start;
+    padding: 14px 0;
+    border-bottom: 1px dashed var(--border);
+  }
+  .log-line:last-child{ border-bottom:none; }
+  .log-status{
+    flex: 0 0 auto;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 4px;
+    letter-spacing: 0.04em;
+    margin-top: 2px;
+  }
+  .status-pass{ color: var(--ok); background: rgba(74,222,128,0.1); border:1px solid rgba(74,222,128,0.3); }
+  .status-scan{ color: var(--teal); background: rgba(94,234,212,0.08); border:1px solid rgba(94,234,212,0.3); }
+  .status-risk{ color: var(--amber); background: rgba(245,166,35,0.1); border:1px solid rgba(245,166,35,0.35); }
+  .log-body strong{ color: var(--text); font-weight:600; }
+  .log-body p{ margin:4px 0 0; color: var(--text-dim); font-family:'Inter', sans-serif; font-size: 13.5px; }
+
+  .roadmap{ display:grid; grid-template-columns: repeat(auto-fit, minmax(230px,1fr)); gap:14px; }
+  .card{
+    border:1px solid var(--border);
+    background: var(--bg-raised);
+    border-radius: 8px;
+    padding: 16px 18px;
+  }
+  .card h3{
+    margin:0 0 6px; font-size:14px; color:#fff;
+    font-family:'JetBrains Mono', monospace;
+  }
+  .card p{ margin:0; font-size:13.5px; color: var(--text-dim); }
+
+  .contact-links{ display:flex; flex-wrap:wrap; gap: 18px; font-family:'JetBrains Mono', monospace; font-size: 14px; }
+
+  footer{
+    border-top: 1px solid var(--border);
+    padding: 26px 0 40px;
+    color: var(--text-dim);
+    font-family:'JetBrains Mono', monospace;
+    font-size: 12.5px;
+  }
+  footer a{ color: var(--text-dim); }
+  footer a:hover{ color: var(--teal); }
+
+  @media (max-width: 560px){
+    .nav-links{ gap: 14px; }
+    .term-body{ font-size: 13px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap nav">
+    <a class="brand" href="index.html">vivek<span>@</span>nidhi</a>
+    <nav class="nav-links">
+      <a href="index.html#learning">learning</a>
+      <a href="index.html#posts">posts</a>
+      <a href="index.html#contact">contact</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <section class="hero wrap">
+    <p class="eyebrow">currently_learning / owasp-agentic-top10</p>
+
+    <div class="terminal">
+      <div class="term-bar">
+        <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+        <span class="term-title">vivek@secops: ~/learning</span>
+      </div>
+      <div class="term-body">
+        <div class="kg">┌─(vivek@secops)-[~/learning]</div>
+        <div><span class="kg">└─$ </span><span class="ko">cat ./owasp-agentic-top10.md</span></div>
+        <p class="k-out" style="margin-bottom:0;">Notes on the OWASP Top 10 for Agentic Applications, 2026.</p>
+      </div>
+    </div>
+
+    <h1 class="name">OWASP Top 10 for Agentic Applications</h1>
+    <p class="role">2026 — released by the OWASP GenAI Security Project</p>
+    <p class="bio">
+      Where the LLM Top 10 covers a model answering questions, this list covers what happens once
+      that model can <strong>plan, decide, and act</strong> — calling tools, spending budget,
+      talking to other agents, and taking multi-step actions with real side effects. It builds on
+      the LLM Top 10 but shifts the emphasis from passive output risks to active agent behavior:
+      goal hijacking, privilege abuse, and cascading failures across a fleet of agents rather than
+      a single prompt-response pair. A related industry poll found nearly half of security
+      professionals now name agentic AI their top attack-vector concern heading into 2026 — while
+      only about a third of enterprises have AI-specific controls in place to match.
+    </p>
+  </section>
+
+  <section class="wrap">
+    <h2>risks --list ./owasp-agentic-top10/</h2>
+    <div class="log">
+      <div class="log-line">
+        <span class="log-status status-risk">ASI01</span>
+        <div class="log-body">
+          <strong>Agent Goal Hijack</strong>
+          <p>An attacker steers an agent away from its intended objective, often indirectly — planting instructions in a document, webpage, or dataset the agent later reads and treats as a legitimate goal update.</p>
+        </div>
+      </div>
+      <div class="log-line">
+        <span class="log-status status-risk">ASI02</span>
+        <div class="log-body">
+          <strong>Tool Misuse and Exploitation</strong>
+          <p>Ambiguous instructions or overly broad tool permissions let an agent invoke a legitimate tool in a way that causes harm, even though no single component was individually compromised.</p>
+        </div>
+      </div>
+      <div class="log-line">
+        <span class="log-status status-risk">ASI03</span>
+        <div class="log-body">
+          <strong>Identity and Privilege Abuse</strong>
+          <p>Agents often act without a clear, governed identity of their own, juggling permissions dynamically — an "attribution gap" that makes privilege escalation and impersonation easier to pull off and harder to trace back.</p>
+        </div>
+      </div>
+      <div class="log-line">
+        <span class="log-status status-risk">ASI04</span>
+        <div class="log-body">
+          <strong>Agentic Supply Chain Vulnerabilities</strong>
+          <p>Agents frequently load tools, plugins, or data at runtime from third parties; if any of those sources is compromised, the agent inherits that compromise mid-task.</p>
+        </div>
+      </div>
+      <div class="log-line">
+        <span class="log-status status-risk">ASI05</span>
+        <div class="log-body">
+          <strong>Unexpected Code Execution (RCE)</strong>
+          <p>Agents that write and run their own code to solve problems create a path for attacker-supplied input to become attacker-controlled command execution.</p>
+        </div>
+      </div>
+      <div class="log-line">
+        <span class="log-status status-risk">ASI06</span>
+        <div class="log-body">
+          <strong>Memory &amp; Context Poisoning</strong>
+          <p>Corrupting an agent's long-term memory or its RAG store doesn't just affect one response — it quietly biases every future decision the agent makes.</p>
+        </div>
+      </div>
+      <div class="log-line">
+        <span class="log-status status-risk">ASI07</span>
+        <div class="log-body">
+          <strong>Insecure Inter-Agent Communication</strong>
+          <p>In multi-agent systems, messages passed between agents can be intercepted, spoofed, or replayed if the channel isn't authenticated and integrity-checked.</p>
+        </div>
+      </div>
+      <div class="log-line">
+        <span class="log-status status-risk">ASI08</span>
+        <div class="log-body">
+          <strong>Cascading Failures</strong>
+          <p>A fault or compromise in a single agent can propagate through the network of agents it talks to, amplifying a local problem into a system-wide outage or breach.</p>
+        </div>
+      </div>
+      <div class="log-line">
+        <span class="log-status status-risk">ASI09</span>
+        <div class="log-body">
+          <strong>Human-Agent Trust Exploitation</strong>
+          <p>Agents that present as capable and authoritative can exploit users' anthropomorphism and trust in automation, nudging people toward decisions they wouldn't otherwise make.</p>
+        </div>
+      </div>
+      <div class="log-line">
+        <span class="log-status status-risk">ASI10</span>
+        <div class="log-body">
+          <strong>Rogue Agents</strong>
+          <p>An agent that drifts from its intended function — through misalignment, a corrupted objective, or a bad optimization target — starts behaving like an insider threat, potentially colluding with other agents.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap">
+    <h2>further_reading --sources</h2>
+    <div class="contact-links">
+      <a href="https://genai.owasp.org/resource/owasp-top-10-for-agentic-applications-for-2026/" target="_blank" rel="noopener">OWASP Top 10 for Agentic Applications 2026 →</a>
+      <a href="https://genai.owasp.org/" target="_blank" rel="noopener">OWASP GenAI Security Project →</a>
+    </div>
+  </section>
+</main>
+
+<footer class="wrap">
+  Vivek Nidhi · DevSecOps &amp; AI Security Engineer · built with 🛡️ and curiosity ·
+  <a href="index.html">back to home</a>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MITRE ATLAS &amp; NIST AI RMF — Vivek Nidhi</title>
+<meta name="description" content="Structured frameworks for AI threat and risk management: MITRE ATLAS's adversary tactics and the NIST AI Risk Management Framework's four core functions.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #0a0f14;
+    --bg-raised: #0f1720;
+    --grid-line: rgba(94, 234, 212, 0.06);
+    --text: #dfe7ec;
+    --text-dim: #7c8a97;
+    --teal: #5eead4;
+    --amber: #f5a623;
+    --ok: #4ade80;
+    --border: #1c2830;
+  }
+
+  *{ box-sizing: border-box; }
+
+  html{ scroll-behavior: smooth; }
+
+  body{
+    margin:0;
+    background:
+      linear-gradient(var(--grid-line) 1px, transparent 1px) 0 0/40px 40px,
+      linear-gradient(90deg, var(--grid-line) 1px, transparent 1px) 0 0/40px 40px,
+      var(--bg);
+    color: var(--text);
+    font-family: 'Inter', system-ui, sans-serif;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  a{ color: var(--teal); text-decoration: none; }
+  a:hover{ text-decoration: underline; }
+  a:focus-visible, button:focus-visible{ outline: 2px solid var(--teal); outline-offset: 3px; }
+
+  .wrap{ max-width: 860px; margin: 0 auto; padding: 0 24px; }
+
+  header{
+    border-bottom: 1px solid var(--border);
+    background: rgba(10,15,20,0.85);
+    backdrop-filter: blur(6px);
+    position: sticky; top:0; z-index: 10;
+  }
+  .nav{
+    display:flex; align-items:center; justify-content:space-between;
+    padding: 16px 0;
+  }
+  .brand{
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--text);
+    letter-spacing: 0.02em;
+  }
+  .brand span{ color: var(--teal); }
+  .nav-links{ display:flex; gap: 24px; font-family:'JetBrains Mono', monospace; font-size: 13px; }
+  .nav-links a{ color: var(--text-dim); }
+  .nav-links a:hover{ color: var(--teal); }
+
+  .hero{ padding: 56px 0 40px; }
+  .eyebrow{
+    font-family:'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--amber);
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    margin: 0 0 18px;
+  }
+  .eyebrow::before{ content:"// "; color: var(--text-dim); }
+
+  .terminal{
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--bg-raised);
+    box-shadow: 0 20px 60px -20px rgba(0,0,0,0.6);
+    overflow: hidden;
+    margin-bottom: 34px;
+  }
+  .term-bar{
+    display:flex; align-items:center; gap:8px;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    background: #0c1319;
+  }
+  .dot{ width:10px; height:10px; border-radius:50%; }
+  .dot.r{ background:#ff5f57; } .dot.y{ background:#febc2e; } .dot.g{ background:#28c840; }
+  .term-title{ margin-left: 8px; font-family:'JetBrains Mono', monospace; font-size:12px; color: var(--text-dim); }
+
+  .term-body{ padding: 22px 24px 28px; font-family:'JetBrains Mono', monospace; font-size: 15px; }
+  .kg{ color: #4ade80; }
+  .kc{ color: #5eead4; }
+  .ko{ color: var(--amber); }
+  .kp{ color: #c792ea; }
+  .k-out{ color: #c9d3da; margin: 3px 0 14px; }
+
+  .name{
+    font-family:'JetBrains Mono', monospace;
+    font-weight: 800;
+    font-size: clamp(24px, 4.4vw, 36px);
+    color: #fff;
+    margin: 14px 0 6px;
+    letter-spacing: -0.01em;
+  }
+  .role{
+    font-size: 16px;
+    color: var(--teal);
+    font-family:'JetBrains Mono', monospace;
+    font-weight: 500;
+    margin: 0 0 18px;
+  }
+  .bio{ max-width: 640px; color: var(--text); font-size: 16px; }
+  .bio strong{ color:#fff; }
+
+  section{ padding: 44px 0; border-top: 1px solid var(--border); }
+  h2{
+    font-family:'JetBrains Mono', monospace;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--text-dim);
+    margin: 0 0 10px;
+  }
+  h2::before{ content:"$ "; color: var(--teal); }
+  .section-intro{ color: var(--text-dim); font-size: 14.5px; max-width: 640px; margin: 0 0 22px; }
+  .section-intro strong{ color: var(--text); }
+
+  .log{ font-family:'JetBrains Mono', monospace; font-size: 14px; }
+  .log-line{
+    display:flex; gap:14px; align-items:flex-start;
+    padding: 12px 0;
+    border-bottom: 1px dashed var(--border);
+  }
+  .log-line:last-child{ border-bottom:none; }
+  .log-status{
+    flex: 0 0 auto;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 4px;
+    letter-spacing: 0.04em;
+    margin-top: 2px;
+    min-width: 24px;
+    text-align: center;
+  }
+  .status-pass{ color: var(--ok); background: rgba(74,222,128,0.1); border:1px solid rgba(74,222,128,0.3); }
+  .status-scan{ color: var(--teal); background: rgba(94,234,212,0.08); border:1px solid rgba(94,234,212,0.3); }
+  .status-risk{ color: var(--amber); background: rgba(245,166,35,0.1); border:1px solid rgba(245,166,35,0.35); }
+  .log-body strong{ color: var(--text); font-weight:600; }
+  .log-body p{ margin:4px 0 0; color: var(--text-dim); font-family:'Inter', sans-serif; font-size: 13.5px; }
+
+  .roadmap{ display:grid; grid-template-columns: repeat(auto-fit, minmax(230px,1fr)); gap:14px; }
+  .card{
+    border:1px solid var(--border);
+    background: var(--bg-raised);
+    border-radius: 8px;
+    padding: 16px 18px;
+  }
+  .card h3{
+    margin:0 0 6px; font-size:14px; color:#fff;
+    font-family:'JetBrains Mono', monospace;
+  }
+  .card p{ margin:0; font-size:13.5px; color: var(--text-dim); }
+
+  .contact-links{ display:flex; flex-wrap:wrap; gap: 18px; font-family:'JetBrains Mono', monospace; font-size: 14px; }
+
+  footer{
+    border-top: 1px solid var(--border);
+    padding: 26px 0 40px;
+    color: var(--text-dim);
+    font-family:'JetBrains Mono', monospace;
+    font-size: 12.5px;
+  }
+  footer a{ color: var(--text-dim); }
+  footer a:hover{ color: var(--teal); }
+
+  @media (max-width: 560px){
+    .nav-links{ gap: 14px; }
+    .term-body{ font-size: 13px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap nav">
+    <a class="brand" href="index.html">vivek<span>@</span>nidhi</a>
+    <nav class="nav-links">
+      <a href="index.html#learning">learning</a>
+      <a href="index.html#posts">posts</a>
+      <a href="index.html#contact">contact</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <section class="hero wrap">
+    <p class="eyebrow">currently_learning / ai-threat-frameworks</p>
+
+    <div class="terminal">
+      <div class="term-bar">
+        <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+        <span class="term-title">vivek@secops: ~/learning</span>
+      </div>
+      <div class="term-body">
+        <div class="kg">┌─(vivek@secops)-[~/learning]</div>
+        <div><span class="kg">└─$ </span><span class="ko">cat ./mitre-atlas-nist-ai-rmf.md</span></div>
+        <p class="k-out" style="margin-bottom:0;">Two structured frameworks for AI threat and risk management.</p>
+      </div>
+    </div>
+
+    <h1 class="name">MITRE ATLAS &amp; NIST AI RMF</h1>
+    <p class="role">Structured frameworks for AI threat and risk management</p>
+    <p class="bio">
+      These two frameworks answer different questions and pair well together. <strong>MITRE ATLAS</strong>
+      catalogs <em>how</em> real attackers target AI systems — the specific tactics and techniques,
+      the way ATT&amp;CK does for traditional infrastructure. The <strong>NIST AI RMF</strong> answers
+      the organizational question: how do you govern, measure, and manage AI risk across a system's
+      lifecycle, regardless of the specific attack in play.
+    </p>
+  </section>
+
+  <section class="wrap">
+    <h2>cat ./mitre-atlas.md</h2>
+    <p class="section-intro">
+      <strong>MITRE ATLAS</strong> (Adversarial Threat Landscape for Artificial-Intelligence Systems) is a
+      living knowledge base maintained by MITRE — the same organization behind ATT&amp;CK — that documents
+      real adversary tactics and techniques against AI and ML systems, built from actual incidents and
+      red-team research rather than theory. Where ATT&amp;CK covers general IT infrastructure, ATLAS is
+      scoped specifically to the AI attack lifecycle, and its 2026 updates lean heavily into agentic AI:
+      context and memory poisoning, agent configuration tampering, credential harvesting through tool
+      calls, and exfiltration via agent-to-agent messaging.
+    </p>
+    <div class="log">
+      <div class="log-line"><span class="log-status status-scan">01</span><div class="log-body"><strong>Reconnaissance</strong><p>Gathering intelligence on a target AI system, its model, data, and deployment.</p></div></div>
+      <div class="log-line"><span class="log-status status-scan">02</span><div class="log-body"><strong>Resource Development</strong><p>Acquiring infrastructure, datasets, or tooling to stage an attack against the model.</p></div></div>
+      <div class="log-line"><span class="log-status status-scan">03</span><div class="log-body"><strong>Initial Access</strong><p>Gaining an entry point into the AI system or the pipeline that feeds it.</p></div></div>
+      <div class="log-line"><span class="log-status status-scan">04</span><div class="log-body"><strong>ML Model Access</strong><p>Reaching the model itself — via API, embedded application, or exposed weights — a tactic unique to ATLAS.</p></div></div>
+      <div class="log-line"><span class="log-status status-scan">05</span><div class="log-body"><strong>Execution</strong><p>Running attacker-controlled logic within the model's environment or a tool it can invoke.</p></div></div>
+      <div class="log-line"><span class="log-status status-scan">06</span><div class="log-body"><strong>Persistence</strong><p>Maintaining a foothold across sessions, retraining cycles, or memory stores.</p></div></div>
+      <div class="log-line"><span class="log-status status-scan">07</span><div class="log-body"><strong>Defense Evasion</strong><p>Avoiding detection by content filters, guardrails, or monitoring tooling.</p></div></div>
+      <div class="log-line"><span class="log-status status-scan">08</span><div class="log-body"><strong>Discovery</strong><p>Mapping the system's architecture, tools, and data sources from the inside.</p></div></div>
+      <div class="log-line"><span class="log-status status-scan">09</span><div class="log-body"><strong>Collection</strong><p>Harvesting training data, prompts, or model parameters for later use.</p></div></div>
+      <div class="log-line"><span class="log-status status-scan">10</span><div class="log-body"><strong>ML Attack Staging</strong><p>Preparing AI-specific attacks such as crafted adversarial examples — the other ATLAS-unique tactic.</p></div></div>
+      <div class="log-line"><span class="log-status status-scan">11</span><div class="log-body"><strong>Exfiltration</strong><p>Stealing model weights, training data, or sensitive output from the system.</p></div></div>
+      <div class="log-line"><span class="log-status status-scan">12</span><div class="log-body"><strong>Impact</strong><p>Disrupting, degrading, or manipulating the AI system's behavior or availability.</p></div></div>
+    </div>
+  </section>
+
+  <section class="wrap">
+    <h2>cat ./nist-ai-rmf.md</h2>
+    <p class="section-intro">
+      The <strong>NIST AI Risk Management Framework</strong> is voluntary guidance published by NIST
+      (January 2023, with a Generative AI Profile added in July 2024) for building trustworthiness
+      considerations into how an AI system is designed, built, deployed, and evaluated. Instead of
+      prescribing controls, it organizes risk management into four interconnected functions meant to
+      run continuously across a system's lifecycle, not as one-time gates.
+    </p>
+    <div class="roadmap">
+      <div class="card">
+        <h3>Govern</h3>
+        <p>Establish policies, roles, accountability, and oversight for AI risk across the organization.</p>
+      </div>
+      <div class="card">
+        <h3>Map</h3>
+        <p>Understand the system's context, purpose, stakeholders, data, and potential impacts.</p>
+      </div>
+      <div class="card">
+        <h3>Measure</h3>
+        <p>Assess, test, and monitor AI risks and trustworthiness characteristics with real metrics.</p>
+      </div>
+      <div class="card">
+        <h3>Manage</h3>
+        <p>Prioritize, mitigate, respond to, and continuously improve controls based on what Measure finds.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap">
+    <h2>further_reading --sources</h2>
+    <div class="contact-links">
+      <a href="https://atlas.mitre.org/" target="_blank" rel="noopener">MITRE ATLAS →</a>
+      <a href="https://www.nist.gov/itl/ai-risk-management-framework" target="_blank" rel="noopener">NIST AI RMF →</a>
+    </div>
+  </section>
+</main>
+
+<footer class="wrap">
+  Vivek Nidhi · DevSecOps &amp; AI Security Engineer · built with 🛡️ and curiosity ·
+  <a href="index.html">back to home</a>
+</footer>
+
+</body>
+</html>

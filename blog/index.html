@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Blog — Vivek Nidhi</title>
+<meta name="description" content="Writing about the cloud, security, and AI lessons picked up on the job.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #0a0f14;
+    --bg-raised: #0f1720;
+    --grid-line: rgba(94, 234, 212, 0.06);
+    --text: #dfe7ec;
+    --text-dim: #7c8a97;
+    --teal: #5eead4;
+    --amber: #f5a623;
+    --ok: #4ade80;
+    --border: #1c2830;
+  }
+
+  *{ box-sizing: border-box; }
+
+  html{ scroll-behavior: smooth; }
+
+  body{
+    margin:0;
+    background:
+      linear-gradient(var(--grid-line) 1px, transparent 1px) 0 0/40px 40px,
+      linear-gradient(90deg, var(--grid-line) 1px, transparent 1px) 0 0/40px 40px,
+      var(--bg);
+    color: var(--text);
+    font-family: 'Inter', system-ui, sans-serif;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  a{ color: var(--teal); text-decoration: none; }
+  a:hover{ text-decoration: underline; }
+  a:focus-visible, button:focus-visible{ outline: 2px solid var(--teal); outline-offset: 3px; }
+
+  .wrap{ max-width: 860px; margin: 0 auto; padding: 0 24px; }
+
+  header{
+    border-bottom: 1px solid var(--border);
+    background: rgba(10,15,20,0.85);
+    backdrop-filter: blur(6px);
+    position: sticky; top:0; z-index: 10;
+  }
+  .nav{
+    display:flex; align-items:center; justify-content:space-between;
+    padding: 16px 0;
+  }
+  .brand{
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--text);
+    letter-spacing: 0.02em;
+  }
+  .brand span{ color: var(--teal); }
+  .nav-links{ display:flex; gap: 24px; font-family:'JetBrains Mono', monospace; font-size: 13px; }
+  .nav-links a{ color: var(--text-dim); }
+  .nav-links a:hover{ color: var(--teal); }
+
+  .hero{ padding: 56px 0 40px; }
+  .eyebrow{
+    font-family:'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--amber);
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    margin: 0 0 18px;
+  }
+  .eyebrow::before{ content:"// "; color: var(--text-dim); }
+
+  .name{
+    font-family:'JetBrains Mono', monospace;
+    font-weight: 800;
+    font-size: clamp(26px, 4.6vw, 38px);
+    color: #fff;
+    margin: 14px 0 6px;
+    letter-spacing: -0.01em;
+  }
+  .role{
+    font-size: 16px;
+    color: var(--teal);
+    font-family:'JetBrains Mono', monospace;
+    font-weight: 500;
+    margin: 0 0 18px;
+  }
+  .bio{ max-width: 640px; color: var(--text); font-size: 16px; }
+  .bio strong{ color:#fff; }
+
+  section{ padding: 44px 0; border-top: 1px solid var(--border); }
+  h2{
+    font-family:'JetBrains Mono', monospace;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--text-dim);
+    margin: 0 0 22px;
+  }
+  h2::before{ content:"$ "; color: var(--teal); }
+
+  .log{ font-family:'JetBrains Mono', monospace; font-size: 14px; }
+  .log-line{
+    display:flex; gap:14px; align-items:flex-start;
+    padding: 14px 0;
+    border-bottom: 1px dashed var(--border);
+  }
+  .log-line:last-child{ border-bottom:none; }
+  a.log-line-link{ text-decoration:none; color:inherit; }
+  .log-status{
+    flex: 0 0 auto;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 4px;
+    letter-spacing: 0.04em;
+    margin-top: 2px;
+  }
+  .status-pass{ color: var(--ok); background: rgba(74,222,128,0.1); border:1px solid rgba(74,222,128,0.3); }
+  .status-scan{ color: var(--teal); background: rgba(94,234,212,0.08); border:1px solid rgba(94,234,212,0.3); }
+  .log-body strong{ color: var(--text); font-weight:600; }
+  .log-body p{ margin:4px 0 0; color: var(--text-dim); font-family:'Inter', sans-serif; font-size: 13.5px; }
+
+  .contact-links{ display:flex; flex-wrap:wrap; gap: 18px; font-family:'JetBrains Mono', monospace; font-size: 14px; }
+
+  footer{
+    border-top: 1px solid var(--border);
+    padding: 26px 0 40px;
+    color: var(--text-dim);
+    font-family:'JetBrains Mono', monospace;
+    font-size: 12.5px;
+  }
+  footer a{ color: var(--text-dim); }
+  footer a:hover{ color: var(--teal); }
+
+  @media (max-width: 560px){
+    .nav-links{ gap: 14px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap nav">
+    <a class="brand" href="../index.html">vivek<span>@</span>nidhi</a>
+    <nav class="nav-links">
+      <a href="../index.html#learning">learning</a>
+      <a href="../index.html#focus">focus</a>
+      <a href="../index.html#contact">contact</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <section class="hero wrap">
+    <p class="eyebrow">./blog</p>
+    <h1 class="name">Blog</h1>
+    <p class="role">All posts, grouped under /blog/</p>
+    <p class="bio">
+      Writing about the cloud, security, and AI lessons I pick up on the job.
+      If it hardened a pipeline or taught me something about securing AI, it goes here.
+    </p>
+  </section>
+
+  <section class="wrap">
+    <h2>ls -la ./blog/</h2>
+    <div class="log">
+      <a class="log-line log-line-link" href="eks-rds-zero-downtime-scaling.html">
+        <span class="log-status status-pass">md</span>
+        <div class="log-body">
+          <strong>eks-rds-zero-downtime-scaling.md</strong>
+          <p>rw-r--r-- · 12K · 02 Jun 2026 — Scaling RDS storage online with zero downtime, and what I got wrong the first time.</p>
+        </div>
+      </a>
+      <a class="log-line log-line-link" href="owasp-llm-top10-notes.html">
+        <span class="log-status status-scan">md</span>
+        <div class="log-body">
+          <strong>owasp-llm-top10-notes.md</strong>
+          <p>rw-r--r-- · 9K · 18 May 2026 — Working through the OWASP LLM Top 10, one failure mode at a time.</p>
+        </div>
+      </a>
+      <a class="log-line log-line-link" href="prompt-injection-first-principles.html">
+        <span class="log-status status-scan">md</span>
+        <div class="log-body">
+          <strong>prompt-injection-first-principles.md</strong>
+          <p>rw-r--r-- · 7K · 30 Apr 2026 — Why prompt injection is hard to fully patch, explained from first principles.</p>
+        </div>
+      </a>
+      <a class="log-line log-line-link" href="keycloak-oauth2-proxy-ingress-debug.html">
+        <span class="log-status status-pass">md</span>
+        <div class="log-body">
+          <strong>keycloak-oauth2-proxy-ingress-debug.md</strong>
+          <p>rw-r--r-- · 11K · 02 Apr 2026 — Debugging Nginx Ingress, oauth2-proxy, and Keycloak SSO in Kubernetes.</p>
+        </div>
+      </a>
+    </div>
+  </section>
+</main>
+
+<footer class="wrap">
+  Vivek Nidhi · DevSecOps &amp; AI Security Engineer · built with 🛡️ and curiosity ·
+  <a href="../index.html">back to home</a>
+</footer>
+
+</body>
+</html>

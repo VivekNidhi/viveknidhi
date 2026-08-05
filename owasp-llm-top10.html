@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OWASP Top 10 for LLM Applications (2026) — Vivek Nidhi</title>
+<meta name="description" content="A field guide to the OWASP Top 10 for LLM Applications, 2026 edition — mapping classic security risks onto real LLM-integrated systems.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #0a0f14;
+    --bg-raised: #0f1720;
+    --grid-line: rgba(94, 234, 212, 0.06);
+    --text: #dfe7ec;
+    --text-dim: #7c8a97;
+    --teal: #5eead4;
+    --amber: #f5a623;
+    --ok: #4ade80;
+    --border: #1c2830;
+  }
+
+  *{ box-sizing: border-box; }
+
+  html{ scroll-behavior: smooth; }
+
+  body{
+    margin:0;
+    background:
+      linear-gradient(var(--grid-line) 1px, transparent 1px) 0 0/40px 40px,
+      linear-gradient(90deg, var(--grid-line) 1px, transparent 1px) 0 0/40px 40px,
+      var(--bg);
+    color: var(--text);
+    font-family: 'Inter', system-ui, sans-serif;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  a{ color: var(--teal); text-decoration: none; }
+  a:hover{ text-decoration: underline; }
+  a:focus-visible, button:focus-visible{ outline: 2px solid var(--teal); outline-offset: 3px; }
+
+  .wrap{ max-width: 860px; margin: 0 auto; padding: 0 24px; }
+
+  /* ---------- header ---------- */
+  header{
+    border-bottom: 1px solid var(--border);
+    background: rgba(10,15,20,0.85);
+    backdrop-filter: blur(6px);
+    position: sticky; top:0; z-index: 10;
+  }
+  .nav{
+    display:flex; align-items:center; justify-content:space-between;
+    padding: 16px 0;
+  }
+  .brand{
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--text);
+    letter-spacing: 0.02em;
+  }
+  .brand span{ color: var(--teal); }
+  .nav-links{ display:flex; gap: 24px; font-family:'JetBrains Mono', monospace; font-size: 13px; }
+  .nav-links a{ color: var(--text-dim); }
+  .nav-links a:hover{ color: var(--teal); }
+
+  /* ---------- hero / terminal ---------- */
+  .hero{ padding: 56px 0 40px; }
+  .eyebrow{
+    font-family:'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--amber);
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    margin: 0 0 18px;
+  }
+  .eyebrow::before{ content:"// "; color: var(--text-dim); }
+
+  .terminal{
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--bg-raised);
+    box-shadow: 0 20px 60px -20px rgba(0,0,0,0.6);
+    overflow: hidden;
+    margin-bottom: 34px;
+  }
+  .term-bar{
+    display:flex; align-items:center; gap:8px;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    background: #0c1319;
+  }
+  .dot{ width:10px; height:10px; border-radius:50%; }
+  .dot.r{ background:#ff5f57; } .dot.y{ background:#febc2e; } .dot.g{ background:#28c840; }
+  .term-title{ margin-left: 8px; font-family:'JetBrains Mono', monospace; font-size:12px; color: var(--text-dim); }
+
+  .term-body{ padding: 22px 24px 28px; font-family:'JetBrains Mono', monospace; font-size: 15px; }
+  .kg{ color: #4ade80; }      /* green — prompt path */
+  .kc{ color: #5eead4; }      /* cyan — whoami */
+  .ko{ color: var(--amber); } /* orange — cat */
+  .kp{ color: #c792ea; }      /* purple — ls -la */
+  .k-out{ color: #c9d3da; margin: 3px 0 14px; }
+
+  .name{
+    font-family:'JetBrains Mono', monospace;
+    font-weight: 800;
+    font-size: clamp(26px, 4.6vw, 38px);
+    color: #fff;
+    margin: 14px 0 6px;
+    letter-spacing: -0.01em;
+  }
+  .role{
+    font-size: 16px;
+    color: var(--teal);
+    font-family:'JetBrains Mono', monospace;
+    font-weight: 500;
+    margin: 0 0 18px;
+  }
+  .bio{ max-width: 640px; color: var(--text); font-size: 16px; }
+  .bio strong{ color:#fff; }
+
+  /* ---------- section shell ---------- */
+  section{ padding: 44px 0; border-top: 1px solid var(--border); }
+  h2{
+    font-family:'JetBrains Mono', monospace;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--text-dim);
+    margin: 0 0 22px;
+  }
+  h2::before{ content:"$ "; color: var(--teal); }
+
+  /* ---------- risk log ---------- */
+  .log{ font-family:'JetBrains Mono', monospace; font-size: 14px; }
+  .log-line{
+    display:flex; gap:14px; align-items:flex-start;
+    padding: 14px 0;
+    border-bottom: 1px dashed var(--border);
+  }
+  .log-line:last-child{ border-bottom:none; }
+  .log-status{
+    flex: 0 0 auto;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 4px;
+    letter-spacing: 0.04em;
+    margin-top: 2px;
+  }
+  .status-pass{ color: var(--ok); background: rgba(74,222,128,0.1); border:1px solid rgba(74,222,128,0.3); }
+  .status-scan{ color: var(--teal); background: rgba(94,234,212,0.08); border:1px solid rgba(94,234,212,0.3); }
+  .status-risk{ color: var(--amber); background: rgba(245,166,35,0.1); border:1px solid rgba(245,166,35,0.35); }
+  .log-body strong{ color: var(--text); font-weight:600; }
+  .log-body p{ margin:4px 0 0; color: var(--text-dim); font-family:'Inter', sans-serif; font-size: 13.5px; }
+
+  /* ---------- cards ---------- */
+  .roadmap{ display:grid; grid-template-columns: repeat(auto-fit, minmax(230px,1fr)); gap:14px; }
+  .card{
+    border:1px solid var(--border);
+    background: var(--bg-raised);
+    border-radius: 8px;
+    padding: 16px 18px;
+  }
+  .card h3{
+    margin:0 0 6px; font-size:14px; color:#fff;
+    font-family:'JetBrains Mono', monospace;
+  }
+  .card p{ margin:0; font-size:13.5px; color: var(--text-dim); }
+
+  /* ---------- links row (sources / contact) ---------- */
+  .contact-links{ display:flex; flex-wrap:wrap; gap: 18px; font-family:'JetBrains Mono', monospace; font-size: 14px; }
+
+  footer{
+    border-top: 1px solid var(--border);
+    padding: 26px 0 40px;
+    color: var(--text-dim);
+    font-family:'JetBrains Mono', monospace;
+    font-size: 12.5px;
+  }
+  footer a{ color: var(--text-dim); }
+  footer a:hover{ color: var(--teal); }
+
+  @media (max-width: 560px){
+    .nav-links{ gap: 14px; }
+    .term-body{ font-size: 13px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap nav">
+    <a class="brand" href="index.html">vivek<span>@</span>nidhi</a>
+    <nav class="nav-links">
+      <a href="index.html#learning">learning</a>
+      <a href="index.html#posts">posts</a>
+      <a href="index.html#contact">contact</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <section class="hero wrap">
+    <p class="eyebrow">currently_learning / owasp-llm-top10</p>
+
+    <div class="terminal">
+      <div class="term-bar">
+        <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+        <span class="term-title">vivek@secops: ~/learning</span>
+      </div>
+      <div class="term-body">
+        <div class="kg">┌─(vivek@secops)-[~/learning]</div>
+        <div><span class="kg">└─$ </span><span class="ko">cat ./owasp-llm-top10.md</span></div>
+        <p class="k-out" style="margin-bottom:0;">Notes on the OWASP Top 10 for LLM Applications, 2026 edition.</p>
+      </div>
+    </div>
+
+    <h1 class="name">OWASP Top 10 for LLM Applications</h1>
+    <p class="role">2026 Edition</p>
+    <p class="bio">
+      Published by the <strong>OWASP GenAI Security Project</strong>, this is the community-driven
+      reference for the most critical security risks in LLM-powered applications. It maps familiar
+      failure modes — injection, broken access control, unsafe deserialization — onto how they
+      actually show up once a large language model sits in the request path: untrusted text that
+      gets treated as instructions, tool calls with too much reach, and outputs that downstream
+      systems trust a little too much. The list below isn't ranked by severity — <strong>LLM10 can
+      matter as much as LLM01</strong> depending on what you've built — so it's worth treating as a
+      full threat model rather than a checklist to clear top-down.
+    </p>
+  </section>
+
+  <section class="wrap">
+    <h2>risks --list ./owasp-llm-top10/</h2>
+    <div class="log">
+      <div class="log-line">
+        <span class="log-status status-risk">LLM01</span>
+        <div class="log-body">
+          <strong>Prompt Injection</strong>
+          <p>Untrusted text — typed by a user or hidden in a document, webpage, or tool result the model later reads — gets interpreted as an instruction instead of data, letting an attacker override the application's intended behavior. Covers both direct injection and indirect injection via content the model ingests.</p>
+        </div>
+      </div>
+      <div class="log-line">
+        <span class="log-status status-risk">LLM02</span>
+        <div class="log-body">
+          <strong>Sensitive Information Disclosure</strong>
+          <p>The model exposes data it shouldn't: personal information memorized during training, secrets embedded in a system prompt, private documents pulled in through retrieval, or details inferred from earlier turns in the conversation.</p>
+        </div>
+      </div>
+      <div class="log-line">
+        <span class="log-status status-risk">LLM03</span>
+        <div class="log-body">
+          <strong>Supply Chain</strong>
+          <p>A compromise anywhere upstream — model weights, a fine-tuning dataset, a plugin, or a third-party library — runs inside the application's trust boundary. A backdoored open-weight model can carry hidden triggers that only fire on inputs the attacker knows in advance.</p>
+        </div>
+      </div>
+      <div class="log-line">
+        <span class="log-status status-risk">LLM04</span>
+        <div class="log-body">
+          <strong>Data and Model Poisoning</strong>
+          <p>Attackers plant adversarial examples in training or fine-tuning data so the model behaves normally under evaluation but produces attacker-chosen output for a narrow set of inputs only they know about.</p>
+        </div>
+      </div>
+      <div class="log-line">
+        <span class="log-status status-risk">LLM05</span>
+        <div class="log-body">
+          <strong>Improper Output Handling</strong>
+          <p>Downstream code trusts LLM output the way it would trust sanitized input, opening the door to SQL injection, XSS, command execution, and SSRF once that output is passed straight into a query, a shell, or a browser. The model has no security model of its own.</p>
+        </div>
+      </div>
+      <div class="log-line">
+        <span class="log-status status-risk">LLM06</span>
+        <div class="log-body">
+          <strong>Excessive Agency</strong>
+          <p>An agent is handed more permissions, tools, or autonomy than the task actually needs. When that happens, a successful prompt injection doesn't just corrupt a response — it can trigger irreversible real-world actions.</p>
+        </div>
+      </div>
+      <div class="log-line">
+        <span class="log-status status-risk">LLM07</span>
+        <div class="log-body">
+          <strong>System Prompt Leakage</strong>
+          <p>The instructions, persona rules, tool documentation, and any embedded credentials in a system prompt get extracted by an attacker — handing them a map of the application's guardrails and internals.</p>
+        </div>
+      </div>
+      <div class="log-line">
+        <span class="log-status status-risk">LLM08</span>
+        <div class="log-body">
+          <strong>Vector and Embedding Weaknesses</strong>
+          <p>RAG pipelines bring their own attack surface: poisoned embeddings, retrieval that crosses tenant boundaries it shouldn't, and inversion attacks that reconstruct approximate source text from exposed vectors.</p>
+        </div>
+      </div>
+      <div class="log-line">
+        <span class="log-status status-risk">LLM09</span>
+        <div class="log-body">
+          <strong>Misinformation</strong>
+          <p>The model states false information with total confidence. When that output feeds an automated decision or an irreversible action, a hallucination stops being an accuracy problem and becomes a security incident.</p>
+        </div>
+      </div>
+      <div class="log-line">
+        <span class="log-status status-risk">LLM10</span>
+        <div class="log-body">
+          <strong>Unbounded Consumption</strong>
+          <p>Long prompts, runaway generations, tool-call loops, or embedding floods let an attacker drive compute and API spend far beyond normal usage in a very short window — a denial-of-wallet problem as much as denial-of-service.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap">
+    <h2>further_reading --sources</h2>
+    <div class="contact-links">
+      <a href="https://genai.owasp.org/resource/owasp-genai-llm-top-10-2026/" target="_blank" rel="noopener">OWASP GenAI LLM Top 10 2026 →</a>
+      <a href="https://genai.owasp.org/" target="_blank" rel="noopener">OWASP GenAI Security Project →</a>
+    </div>
+  </section>
+</main>
+
+<footer class="wrap">
+  Vivek Nidhi · DevSecOps &amp; AI Security Engineer · built with 🛡️ and curiosity ·
+  <a href="index.html">back to home</a>
+</footer>
+
+</body>
+</html>

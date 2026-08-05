@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Vivek Nidhi — DevSecOps &amp; AI Security Engineer</title>
+<title>Vivek Nidhi — DevSecOps &amp; AI Security Engineer </title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
@@ -167,6 +167,7 @@
   .status-scan{ color: var(--teal); background: rgba(94,234,212,0.08); border:1px solid rgba(94,234,212,0.3); }
   .log-body strong{ color: var(--text); font-weight:600; }
   .log-body p{ margin:4px 0 0; color: var(--text-dim); font-family:'Inter', sans-serif; font-size: 13.5px; }
+  a.log-line-link{ text-decoration:none; color:inherit; }
 
   /* ---------- learning roadmap ---------- */
   .roadmap{ display:grid; grid-template-columns: repeat(auto-fit, minmax(230px,1fr)); gap:14px; }
@@ -181,6 +182,8 @@
     font-family:'JetBrains Mono', monospace;
   }
   .card p{ margin:0; font-size:13.5px; color: var(--text-dim); }
+
+  a.card{ display:block; text-decoration:none; color:inherit; }
 
   /* ---------- contact / footer ---------- */
   .contact-links{ display:flex; flex-wrap:wrap; gap: 18px; font-family:'JetBrains Mono', monospace; font-size: 14px; }
@@ -261,34 +264,34 @@
   <section id="posts" class="wrap">
     <h2>ls -la ./posts/</h2>
     <div class="log" style="font-size:13px;">
-      <div class="log-line">
+      <a class="log-line log-line-link" href="blog/eks-rds-zero-downtime-scaling.html">
         <span class="log-status status-pass">md</span>
         <div class="log-body">
           <strong>eks-rds-zero-downtime-scaling.md</strong>
           <p>rw-r--r-- · 12K · 02 Jun 2026 — Scaling RDS storage online with zero downtime, and what I got wrong the first time.</p>
         </div>
-      </div>
-      <div class="log-line">
+      </a>
+      <a class="log-line log-line-link" href="blog/owasp-llm-top10-notes.html">
         <span class="log-status status-scan">md</span>
         <div class="log-body">
           <strong>owasp-llm-top10-notes.md</strong>
           <p>rw-r--r-- · 9K · 18 May 2026 — Working through the OWASP LLM Top 10, one failure mode at a time.</p>
         </div>
-      </div>
-      <div class="log-line">
+      </a>
+      <a class="log-line log-line-link" href="blog/prompt-injection-first-principles.html">
         <span class="log-status status-scan">md</span>
         <div class="log-body">
           <strong>prompt-injection-first-principles.md</strong>
           <p>rw-r--r-- · 7K · 30 Apr 2026 — Why prompt injection is hard to fully patch, explained from first principles.</p>
         </div>
-      </div>
-      <div class="log-line">
+      </a>
+      <a class="log-line log-line-link" href="blog/keycloak-oauth2-proxy-ingress-debug.html">
         <span class="log-status status-pass">md</span>
         <div class="log-body">
           <strong>keycloak-oauth2-proxy-ingress-debug.md</strong>
           <p>rw-r--r-- · 11K · 02 Apr 2026 — Debugging Nginx Ingress, oauth2-proxy, and Keycloak SSO in Kubernetes.</p>
         </div>
-      </div>
+      </a>
     </div>
   </section>
 
@@ -322,31 +325,31 @@
   <section id="learning" class="wrap">
     <h2>currently_learning --roadmap</h2>
     <div class="roadmap">
-      <div class="card">
+      <a class="card" href="owasp-llm-top10.html">
         <h3>OWASP LLM Top 10</h3>
         <p>Mapping classic risks onto real LLM-integrated systems.</p>
-      </div>
-      <div class="card">
+      </a>
+      <a class="card" href="owasp-agentic-top10.html">
         <h3>OWASP Agentic Top 10</h3>
         <p>Threat modelling for autonomous, tool-using agents.</p>
-      </div>
-      <div class="card">
+      </a>
+      <a class="card" href="ai-threat-frameworks.html">
         <h3>MITRE ATLAS &amp; NIST AI RMF</h3>
         <p>Structured frameworks for AI threat and risk management.</p>
-      </div>
-      <div class="card">
+      </a>
+      <a class="card" href="offensive-ai-tooling.html">
         <h3>Offensive AI Tooling</h3>
         <p>Hands-on with PyRIT, Garak, DeepTeam, and ART.</p>
-      </div>
+      </a>
     </div>
   </section>
 
   <section id="contact" class="wrap">
     <h2>contact --show</h2>
     <div class="contact-links">
-      <a href="https://github.com/">GitHub →</a>
-      <a href="#">LinkedIn →</a>
-      <a href="#">Blog →</a>
+      <a href="https://github.com/viveknidhi" target="_blank" rel="noopener">GitHub →</a>
+      <a href="https://www.linkedin.com/in/ai-secops/" target="_blank" rel="noopener">LinkedIn →</a>
+      <a href="blog/index.html">Blog →</a>
     </div>
   </section>
 </main>
