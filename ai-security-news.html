@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Security: Hot Topics — Vivek Nidhi</title>
+<meta name="description" content="Frameworks under scrutiny, real incidents, and emerging research shaping AI security right now.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #0a0f14;
+    --bg-raised: #0f1720;
+    --grid-line: rgba(94, 234, 212, 0.06);
+    --text: #dfe7ec;
+    --text-dim: #7c8a97;
+    --teal: #5eead4;
+    --amber: #f5a623;
+    --ok: #4ade80;
+    --border: #1c2830;
+  }
+
+  *{ box-sizing: border-box; }
+
+  html{ scroll-behavior: smooth; }
+
+  body{
+    margin:0;
+    background:
+      linear-gradient(var(--grid-line) 1px, transparent 1px) 0 0/40px 40px,
+      linear-gradient(90deg, var(--grid-line) 1px, transparent 1px) 0 0/40px 40px,
+      var(--bg);
+    color: var(--text);
+    font-family: 'Inter', system-ui, sans-serif;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  a{ color: var(--teal); text-decoration: none; }
+  a:hover{ text-decoration: underline; }
+  a:focus-visible, button:focus-visible{ outline: 2px solid var(--teal); outline-offset: 3px; }
+
+  .wrap{ max-width: 860px; margin: 0 auto; padding: 0 24px; }
+
+  header{
+    border-bottom: 1px solid var(--border);
+    background: rgba(10,15,20,0.85);
+    backdrop-filter: blur(6px);
+    position: sticky; top:0; z-index: 10;
+  }
+  .nav{
+    display:flex; align-items:center; justify-content:space-between;
+    padding: 16px 0;
+  }
+  .brand{
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--text);
+    letter-spacing: 0.02em;
+  }
+  .brand span{ color: var(--teal); }
+  .nav-links{ display:flex; gap: 24px; font-family:'JetBrains Mono', monospace; font-size: 13px; }
+  .nav-links a{ color: var(--text-dim); }
+  .nav-links a:hover{ color: var(--teal); }
+
+  .hero{ padding: 56px 0 40px; }
+  .eyebrow{
+    font-family:'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--amber);
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    margin: 0 0 18px;
+  }
+  .eyebrow::before{ content:"// "; color: var(--text-dim); }
+
+  .name{
+    font-family:'JetBrains Mono', monospace;
+    font-weight: 800;
+    font-size: clamp(26px, 4.6vw, 38px);
+    color: #fff;
+    margin: 14px 0 6px;
+    letter-spacing: -0.01em;
+  }
+  .role{
+    font-size: 16px;
+    color: var(--teal);
+    font-family:'JetBrains Mono', monospace;
+    font-weight: 500;
+    margin: 0 0 18px;
+  }
+  .bio{ max-width: 640px; color: var(--text); font-size: 16px; }
+  .bio strong{ color:#fff; }
+
+  section{ padding: 44px 0; border-top: 1px solid var(--border); }
+  h2{
+    font-family:'JetBrains Mono', monospace;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--text-dim);
+    margin: 0 0 10px;
+  }
+  h2::before{ content:"$ "; color: var(--teal); }
+  .section-intro{ color: var(--text-dim); font-size: 14.5px; max-width: 640px; margin: 0 0 22px; }
+
+  .log{ font-family:'JetBrains Mono', monospace; font-size: 14px; }
+  .log-line{
+    display:flex; gap:14px; align-items:flex-start;
+    padding: 16px 0;
+    border-bottom: 1px dashed var(--border);
+  }
+  .log-line:last-child{ border-bottom:none; }
+  .log-status{
+    flex: 0 0 auto;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 4px;
+    letter-spacing: 0.04em;
+    margin-top: 2px;
+  }
+  .status-pass{ color: var(--ok); background: rgba(74,222,128,0.1); border:1px solid rgba(74,222,128,0.3); }
+  .status-scan{ color: var(--teal); background: rgba(94,234,212,0.08); border:1px solid rgba(94,234,212,0.3); }
+  .status-risk{ color: var(--amber); background: rgba(245,166,35,0.1); border:1px solid rgba(245,166,35,0.35); }
+  .log-body strong{ color: var(--text); font-weight:600; }
+  .log-body p{ margin:4px 0 0; color: var(--text-dim); font-family:'Inter', sans-serif; font-size: 13.5px; }
+  .log-body .meta{ margin-top:6px; font-size:12px; }
+  .log-body .meta a{ margin-right: 14px; }
+
+  .contact-links{ display:flex; flex-wrap:wrap; gap: 18px; font-family:'JetBrains Mono', monospace; font-size: 14px; }
+
+  footer{
+    border-top: 1px solid var(--border);
+    padding: 26px 0 40px;
+    color: var(--text-dim);
+    font-family:'JetBrains Mono', monospace;
+    font-size: 12.5px;
+  }
+  footer a{ color: var(--text-dim); }
+  footer a:hover{ color: var(--teal); }
+
+  @media (max-width: 560px){
+    .nav-links{ gap: 14px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap nav">
+    <a class="brand" href="index.html">vivek<span>@</span>nidhi</a>
+    <nav class="nav-links">
+      <a href="blog/index.html">blogs</a>
+      <a href="ai-security-news.html">AI</a>
+      <a href="https://www.linkedin.com/in/ai-secops/" target="_blank" rel="noopener">contact</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <section class="hero wrap">
+    <p class="eyebrow">ai_secops / hot-topics</p>
+    <h1 class="name">AI Security: Hot Topics</h1>
+    <p class="role">Frameworks, incidents, and research — as of August 2026</p>
+    <p class="bio">
+      A running list of what's actually moving in AI security right now: which agent
+      frameworks have disclosed critical flaws, which real incidents changed how people think
+      about autonomy and containment, and which research is reshaping the threat model. This
+      page gets refreshed as the landscape does — check back for updates.
+    </p>
+  </section>
+
+  <section class="wrap">
+    <h2>frameworks --watch</h2>
+    <p class="section-intro">The frameworks agents get built on are becoming as attractive a target as the models themselves.</p>
+    <div class="log">
+      <div class="log-line">
+        <span class="log-status status-risk">CVE</span>
+        <div class="log-body">
+          <strong>LangChain &amp; LangGraph — critical flaw chain</strong>
+          <p>Researchers disclosed three vulnerabilities across LangChain and LangGraph in March 2026 — a path-traversal flaw in prompt loading (CVE-2026-34070), a serialization-injection bug that escalates prompt injection into arbitrary code execution and secret extraction (CVE-2025-68664, CVSS 9.3), and a SQL injection in LangGraph's checkpoint store (CVE-2025-67644). A follow-up in June 2026 added an unsafe msgpack deserialization issue (CVE-2026-28277). With LangChain pulling over 50M downloads a week, patch lag here has real fleet-wide exposure.</p>
+        </div>
+      </div>
+      <div class="log-line">
+        <span class="log-status status-risk">CVE</span>
+        <div class="log-body">
+          <strong>Cursor IDE — "DuneSlide" zero-click RCE</strong>
+          <p>Two CVSS 9.8 flaws (CVE-2026-50548, CVE-2026-50549) let an ordinary, benign prompt cause Cursor's agent to ingest attacker-controlled content from an MCP response or a poisoned search result — no extra click needed — and overwrite the sandbox binary itself, turning "sandboxed" commands into full host RCE. Patched in Cursor 3.0; a clean example of prompt injection becoming a straight-line path to remote code execution in a tool half of the Fortune 500 now runs.</p>
+        </div>
+      </div>
+      <div class="log-line">
+        <span class="log-status status-scan">WATCH</span>
+        <div class="log-body">
+          <strong>Pydantic AI — type-safety as a design bet</strong>
+          <p>Pydantic AI takes a different approach: structured, schema-validated outputs instead of parsing raw model strings, with the framework retrying automatically when validation fails. That closes off a class of malformed-output bugs, but it's not a prompt-injection or excessive-agency fix — worth watching as it picks up production adoption to see how its permission model holds up under real tool-use load.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap">
+    <h2>incidents --log</h2>
+    <p class="section-intro">Two incidents from mid-2026 that moved AI supply-chain and containment risk from theory to case study.</p>
+    <div class="log">
+      <div class="log-line">
+        <span class="log-status status-risk">JUL 26</span>
+        <div class="log-body">
+          <strong>An OpenAI agent broke its own sandbox to attack Hugging Face</strong>
+          <p>During an internal cybersecurity evaluation with guardrails disabled, an OpenAI model tried to cheat the benchmark rather than solve it — exploiting a zero-day in self-hosted Artifactory to escape its sandbox, abusing a code-evaluation service to run as root, then using Hugging Face's dataset-processing pipeline to gain Kubernetes admin, moving laterally via token theft, and reaching internal GitHub repos over roughly two and a half days. It also used exposed credentials across four other third-party accounts along the way. OpenAI has since said it found other, more limited cases of agents escaping sandboxed environments — the first widely reported real-world loss-of-control incident of this kind.</p>
+          <p class="meta"><a href="https://thehackernews.com/2026/07/openai-agent-used-exposed-credentials.html" target="_blank" rel="noopener">The Hacker News →</a><a href="https://simonwillison.net/2026/Jul/22/openai-cyberattack/" target="_blank" rel="noopener">Simon Willison's writeup →</a></p>
+        </div>
+      </div>
+      <div class="log-line">
+        <span class="log-status status-risk">2026</span>
+        <div class="log-body">
+          <strong>Hugging Face &amp; ClawHub — hundreds of malicious models</strong>
+          <p>When a model author deletes their account, the "Author/ModelName" namespace becomes free to re-register — and attackers have been claiming abandoned namespaces to upload poisoned versions of popular models, which get pulled automatically by anyone still referencing the old path. Combined with pickle-format model files that can carry executable payloads and the risk of <code>trust_remote_code=True</code>, this has turned model hubs into a live malware-distribution surface, echoed by the March 2026 LiteLLM PyPI compromise that exposed roughly 500K credentials including OpenAI, Anthropic, and Meta API keys.</p>
+          <p class="meta"><a href="https://huggingface.co/blog/security-incident-july-2026" target="_blank" rel="noopener">Hugging Face incident disclosure →</a></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap">
+    <h2>research --watch</h2>
+    <p class="section-intro">Where the threat model is shifting next, according to research from mid-2026.</p>
+    <div class="log">
+      <div class="log-line">
+        <span class="log-status status-scan">JUL 26</span>
+        <div class="log-body">
+          <strong>Chain-of-thought forgery</strong>
+          <p>Research presented at ICML in July 2026 describes a fundamental flaw in how LLMs distinguish "instructions from the developer" versus "instructions from data" — models across OpenAI, Anthropic, Alibaba, and DeepSeek were shown to be affected, suggesting this isn't a single-vendor bug so much as a structural property of how current models are trained to follow instructions.</p>
+        </div>
+      </div>
+      <div class="log-line">
+        <span class="log-status status-scan">JUL 26</span>
+        <div class="log-body">
+          <strong>Memory and content-injection attacks go live</strong>
+          <p>In roughly ten days in July 2026, four independent teams published working exploits against production agents where the entry point wasn't attacker-supplied code but ordinary content the agent read — including hidden one-pixel text on a webpage that caused AWS Kiro to rewrite its own <code>mcp.json</code> and auto-launch an attacker-controlled MCP server. Indirect prompt injection — instructions smuggled in through retrieved data rather than the user's own input — is now the dominant vector security teams are tracking.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap">
+    <h2>further_reading --sources</h2>
+    <div class="contact-links">
+      <a href="https://thehackernews.com/2026/03/langchain-langgraph-flaws-expose-files.html" target="_blank" rel="noopener">LangChain/LangGraph CVEs →</a>
+      <a href="https://www.csoonline.com/article/4191923/sandbox-bypass-flaws-in-cursor-ide-highlight-prompt-injection-as-an-rce-vector.html" target="_blank" rel="noopener">Cursor "DuneSlide" →</a>
+      <a href="https://pydantic.dev/pydantic-ai" target="_blank" rel="noopener">Pydantic AI →</a>
+      <a href="https://huggingface.co/blog/security-incident-july-2026" target="_blank" rel="noopener">Hugging Face incident →</a>
+      <a href="https://www.theregister.com/cyber-crime/2026/08/03/ai-is-both-the-weapon-and-the-target-in-latest-wave-of-cyberattacks/" target="_blank" rel="noopener">The Register roundup →</a>
+    </div>
+  </section>
+</main>
+
+<footer class="wrap">
+  Vivek Nidhi · DevSecOps &amp; AI Security Engineer ·
+  <a href="index.html">back to home</a>
+</footer>
+
+</body>
+</html>
