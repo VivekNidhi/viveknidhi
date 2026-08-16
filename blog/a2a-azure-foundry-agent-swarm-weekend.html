@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A weekend with A2A on Azure AI Foundry — Vivek Nidhi</title>
+<meta name="description" content="A weekend project wiring Agent2Agent (A2A) into Azure AI Foundry, then putting a Magentic-style manager in front of a small agent swarm to see if dynamic delegation survives going over the network.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #0a0f14;
+    --bg-raised: #0f1720;
+    --grid-line: rgba(94, 234, 212, 0.06);
+    --text: #dfe7ec;
+    --text-dim: #7c8a97;
+    --teal: #5eead4;
+    --amber: #f5a623;
+    --ok: #4ade80;
+    --border: #1c2830;
+  }
+  *{ box-sizing: border-box; }
+  html{ scroll-behavior: smooth; }
+  body{
+    margin:0;
+    background:
+      linear-gradient(var(--grid-line) 1px, transparent 1px) 0 0/40px 40px,
+      linear-gradient(90deg, var(--grid-line) 1px, transparent 1px) 0 0/40px 40px,
+      var(--bg);
+    color: var(--text);
+    font-family: 'Inter', system-ui, sans-serif;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  a{ color: var(--teal); text-decoration: none; }
+  a:hover{ text-decoration: underline; }
+  a:focus-visible{ outline: 2px solid var(--teal); outline-offset: 3px; }
+  .wrap{ max-width: 720px; margin: 0 auto; padding: 0 24px; }
+  header{
+    border-bottom: 1px solid var(--border);
+    background: rgba(10,15,20,0.85);
+    backdrop-filter: blur(6px);
+    position: sticky; top:0; z-index: 10;
+  }
+  .nav{ display:flex; align-items:center; justify-content:space-between; padding: 16px 0; }
+  .brand{ font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 15px; color: var(--text); letter-spacing: 0.02em; }
+  .brand span{ color: var(--teal); }
+  .nav-links{ display:flex; gap: 24px; font-family:'JetBrains Mono', monospace; font-size: 13px; }
+  .nav-links a{ color: var(--text-dim); }
+  .nav-links a:hover{ color: var(--teal); }
+
+  .hero{ padding: 56px 0 20px; }
+  .eyebrow{ font-family:'JetBrains Mono', monospace; font-size: 12px; color: var(--amber); text-transform: uppercase; letter-spacing: 0.14em; margin: 0 0 18px; }
+  .eyebrow::before{ content:"// "; color: var(--text-dim); }
+
+  .terminal{ border: 1px solid var(--border); border-radius: 10px; background: var(--bg-raised); box-shadow: 0 20px 60px -20px rgba(0,0,0,0.6); overflow: hidden; margin-bottom: 30px; }
+  .term-bar{ display:flex; align-items:center; gap:8px; padding: 10px 14px; border-bottom: 1px solid var(--border); background: #0c1319; }
+  .dot{ width:10px; height:10px; border-radius:50%; }
+  .dot.r{ background:#ff5f57; } .dot.y{ background:#febc2e; } .dot.g{ background:#28c840; }
+  .term-title{ margin-left: 8px; font-family:'JetBrains Mono', monospace; font-size:12px; color: var(--text-dim); }
+  .term-body{ padding: 20px 22px 24px; font-family:'JetBrains Mono', monospace; font-size: 13.5px; }
+  .kg{ color: #4ade80; }
+  .ko{ color: var(--amber); }
+  .k-out{ color: #c9d3da; margin: 3px 0 0; }
+
+  .name{ font-family:'JetBrains Mono', monospace; font-weight: 800; font-size: clamp(24px, 4.4vw, 34px); color: #fff; margin: 0 0 10px; letter-spacing: -0.01em; line-height:1.28; }
+  .role{ font-size: 15.5px; color: var(--teal); font-family:'JetBrains Mono', monospace; font-weight: 500; margin: 0 0 18px; }
+  .bio{ color: var(--text); font-size: 15.5px; }
+  .bio strong{ color:#fff; }
+  .meta{ font-family:'JetBrains Mono', monospace; font-size: 12.5px; color: var(--text-dim); margin: 18px 0 0; }
+
+  .tldr{ border: 1px solid rgba(74,222,128,0.35); background: rgba(74,222,128,0.07); border-radius: 8px; padding: 18px 20px; font-size: 14.5px; color: var(--text); margin: 30px 0 8px; }
+  .tldr strong{ color: var(--ok); font-family:'JetBrains Mono', monospace; }
+
+  main section{ padding: 40px 0; border-top: 1px solid var(--border); }
+  main section:first-of-type{ border-top:none; }
+  h2{ font-family:'JetBrains Mono', monospace; font-size: 13px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--text-dim); margin: 0 0 20px; }
+  h2::before{ content:"$ "; color: var(--teal); }
+  h3{ font-family:'JetBrains Mono', monospace; font-size: 15.5px; color: #fff; margin: 26px 0 10px; letter-spacing:-0.005em; }
+
+  p{ margin: 0 0 16px; color: var(--text); font-size: 15.5px; }
+  ul{ margin: 0 0 16px; padding-left: 20px; }
+  li{ margin-bottom: 8px; font-size: 15px; color: var(--text); }
+  strong{ color: #fff; }
+  code{ font-family:'JetBrains Mono', monospace; font-size: 0.9em; background: rgba(94,234,212,0.08); color: var(--teal); padding: 2px 5px; border-radius: 4px; }
+
+  figure{ margin: 26px 0; }
+  figcaption{ font-family:'JetBrains Mono', monospace; font-size: 12px; color: var(--text-dim); text-align:center; margin-top: 10px; }
+  .diagram-scroll{ overflow-x: auto; -webkit-overflow-scrolling: touch; border: 1px solid var(--border); border-radius: 10px; background: var(--bg-raised); padding: 18px 16px; }
+  .diagram-scroll svg{ display:block; }
+
+  .log{ font-family:'JetBrains Mono', monospace; font-size: 14px; }
+  .log-line{ display:flex; gap:14px; align-items:flex-start; padding: 14px 0; border-bottom: 1px dashed var(--border); }
+  .log-line:last-child{ border-bottom:none; }
+  .log-status{ flex: 0 0 auto; font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 4px; letter-spacing: 0.04em; margin-top: 2px; }
+  .status-pass{ color: var(--ok); background: rgba(74,222,128,0.1); border:1px solid rgba(74,222,128,0.3); }
+  .status-scan{ color: var(--teal); background: rgba(94,234,212,0.08); border:1px solid rgba(94,234,212,0.3); }
+  .status-risk{ color: var(--amber); background: rgba(245,166,35,0.1); border:1px solid rgba(245,166,35,0.35); }
+  .log-body strong{ color: var(--text); font-weight:600; }
+  .log-body p{ margin:4px 0 0; color: var(--text-dim); font-family:'Inter', sans-serif; font-size: 13.5px; }
+
+  .roadmap{ display:grid; grid-template-columns: repeat(auto-fit, minmax(210px,1fr)); gap:14px; margin-top: 4px; }
+  .card{ border:1px solid var(--border); background: var(--bg-raised); border-radius: 8px; padding: 16px 18px; }
+  .card h3{ margin:0 0 6px; font-size:13.5px; color:#fff; }
+  .card p{ margin:0; font-size:13px; color: var(--text-dim); }
+
+  .contact-links{ display:flex; flex-wrap:wrap; gap: 10px 22px; font-family:'JetBrains Mono', monospace; font-size: 14px; }
+  .contact-links .src{ display:block; color: var(--text-dim); font-size: 12px; margin-top: 2px; }
+
+  footer{ border-top: 1px solid var(--border); padding: 26px 0 40px; color: var(--text-dim); font-family:'JetBrains Mono', monospace; font-size: 12.5px; }
+  footer a{ color: var(--text-dim); }
+  footer a:hover{ color: var(--teal); }
+
+  @media (max-width: 560px){ .term-body{ font-size: 12px; } }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap nav">
+    <a class="brand" href="../index.html">vivek<span>@</span>nidhi</a>
+    <nav class="nav-links">
+      <a href="index.html">blog</a>
+      <a href="../index.html">home</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <section class="hero wrap">
+    <p class="eyebrow">./blog/a2a-azure-foundry-agent-swarm-weekend</p>
+
+    <div class="terminal">
+      <div class="term-bar">
+        <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+        <span class="term-title">vivek@secops: ~/weekend-project</span>
+      </div>
+      <div class="term-body">
+        <div class="kg">┌─(vivek@secops)-[~/weekend-project]</div>
+        <div><span class="kg">└─$ </span><span class="ko">cat ./a2a-azure-foundry-agent-swarm-weekend.md</span></div>
+        <p class="k-out">Two days, one Foundry resource, three agents that don't share a process — wiring A2A between them and putting a Magentic-style manager on top to see if dynamic delegation still works once "calling another agent" means a network hop.</p>
+      </div>
+    </div>
+
+    <h1 class="name">A weekend with A2A on Azure AI Foundry</h1>
+    <p class="role">Agent swarms, Magentic orchestration, and what breaks when agents stop living in the same process</p>
+    <p class="bio">
+      I had two things on my "someday" list: actually try the <strong>Agent2Agent (A2A)</strong>
+      protocol instead of just reading the spec, and see whether Microsoft's
+      <strong>Magentic</strong> orchestration pattern — the manager-with-a-ledger approach
+      from Magentic-One — holds up when the workers it's delegating to aren't Python objects
+      in the same process, but separate agents behind a network endpoint. Azure AI Foundry
+      shipped incoming A2A support in public preview this cycle, which made it a reasonable
+      weekend to stop reading and start wiring. This is the notebook version of that weekend:
+      what I built, what the protocol actually gives you, and the three things that ate most
+      of Saturday.
+    </p>
+    <p class="meta">16 Aug 2026 · ~8 min read · stack: Azure AI Foundry Agent Service, A2A protocol v1.0, Semantic Kernel Magentic orchestration</p>
+
+    <div class="tldr">
+      <strong>tl;dr --summary</strong><br>
+      A2A gives agents a standard way to advertise themselves (an <strong>agent card</strong>) and
+      talk to each other over JSON-RPC, regardless of what framework built them — it's the
+      "agents calling agents" counterpart to MCP's "agents calling tools." Foundry Agent Service
+      has supported outbound A2A (calling a remote agent as a tool) for a while; incoming A2A —
+      exposing a Foundry agent <em>as</em> an A2A endpoint other agents can discover and call —
+      is now in public preview, with identity, content safety, and audit logging applied per hop.
+      I put three specialized agents behind A2A endpoints and ran Semantic Kernel's Magentic
+      manager in front of them instead of calling them directly. The dynamic, ledger-based
+      delegation pattern survives the trip over the network surprisingly well — the manager
+      doesn't care that a "worker" is remote. What doesn't come for free: agent-card discovery
+      being static rather than live, and every extra hop being one more place identity and
+      content-safety policy has to be configured correctly, not assumed.
+    </div>
+  </section>
+
+  <section class="wrap">
+    <h2>why --the-itch-behind-the-weekend</h2>
+    <p>
+      Most of the multi-agent demos I'd built before this were single-process: one Python script,
+      a handful of agent objects, a manager calling <code>.run()</code> on each of them directly.
+      That's a fine way to learn an orchestration pattern, but it quietly begs the question that
+      actually matters in production — most real agent swarms won't be one team's code in one
+      process. They'll be agents built by different teams, on different frameworks, sometimes in
+      different companies, that need to find each other and collaborate without everyone agreeing
+      on a shared runtime first. That's the problem A2A is trying to solve, and Foundry's incoming
+      A2A support landing in public preview was the excuse I needed to stop treating it as a spec
+      to read and start treating it as a Saturday.
+    </p>
+  </section>
+
+  <section class="wrap">
+    <h2>a2a-in-30-seconds --what-the-protocol-actually-gives-you</h2>
+    <p>
+      A2A (Agent2Agent) is an open protocol, originally from Google and now under the Linux
+      Foundation, for letting one agent discover and invoke another agent as a peer — not as a
+      tool call into a function, but as a request to a whole other agent that has its own model,
+      memory, and reasoning loop. Two pieces matter most:
+    </p>
+    <ul>
+      <li>
+        <strong>The agent card.</strong> A JSON document, typically served at a well-known path,
+        that advertises what an agent is, what skills it exposes, and how to authenticate to it —
+        the thing another agent (or orchestrator) reads to decide whether this is the right agent
+        to delegate to.
+      </li>
+      <li>
+        <strong>Tasks over JSON-RPC.</strong> A calling agent sends a task to the target agent's
+        endpoint; the target can respond synchronously, stream partial results, or hand back a
+        task ID to poll — closer to "delegate this piece of work and get a real answer back" than
+        a typical tool-call schema.
+      </li>
+    </ul>
+    <p>
+      The comparison I found most useful: <strong>MCP standardizes how an agent calls a tool</strong>
+      (a database, a search API, a filesystem); <strong>A2A standardizes how an agent calls another
+      agent</strong>. They're complementary, not competing — in the swarm I built, every worker
+      agent still used MCP internally to reach its own tools, and A2A only sat at the boundary
+      between agents.
+    </p>
+  </section>
+
+  <section class="wrap">
+    <h2>setup --wiring-it-up-in-foundry</h2>
+    <p>
+      Foundry Agent Service already had an outbound A2A tool — an agent calling a remote A2A
+      endpoint as if it were any other tool. What's new in public preview is the other direction:
+      taking a Foundry agent and exposing <em>it</em> as an A2A endpoint, with an auto-generated
+      agent card, so agents built on completely different stacks can discover and call it. I built
+      three small Foundry agents for the weekend, each with a narrow job:
+    </p>
+    <div class="log">
+      <div class="log-line">
+        <span class="log-status status-scan">A2A</span>
+        <div class="log-body">
+          <strong>research-agent</strong>
+          <p>Grounded on Bing + a small internal knowledge index. Job: turn a fuzzy question into a cited set of findings.</p>
+        </div>
+      </div>
+      <div class="log-line">
+        <span class="log-status status-scan">A2A</span>
+        <div class="log-body">
+          <strong>data-agent</strong>
+          <p>Code-interpreter-backed. Job: take the research agent's findings and produce a small structured table or chart.</p>
+        </div>
+      </div>
+      <div class="log-line">
+        <span class="log-status status-scan">A2A</span>
+        <div class="log-body">
+          <strong>reviewer-agent</strong>
+          <p>No tools, deliberately weaker model. Job: read the other two agents' output and flag unsupported claims before anything gets called "done."</p>
+        </div>
+      </div>
+    </div>
+    <p>
+      Each agent got an incoming A2A endpoint enabled and its own agent card. Two protocol
+      versions are supported side by side — v1.0 and v0.3 — with Microsoft's guidance being to
+      target v1.0 for anything new, which is what I used throughout. Every call between agents
+      goes through Foundry's managed endpoint rather than agent-to-agent directly, which means
+      identity, content-safety filtering, and audit logging apply on <em>every hop</em>, not just
+      at the outermost entry point — worth knowing before you assume a "safe" agent talking to a
+      "safe" agent is automatically a safe conversation.
+    </p>
+  </section>
+
+  <section class="wrap">
+    <h2>the-swarm --putting-a-magentic-manager-in-front</h2>
+    <p>
+      The actual experiment was upstream of Foundry's A2A tooling: instead of wiring the three
+      agents together with fixed, hand-coded handoffs, I put a <strong>Magentic</strong> manager
+      in front of them, using Semantic Kernel's implementation of the orchestration pattern
+      Microsoft's AutoGen team introduced with Magentic-One. The core idea is a manager that
+      doesn't run a fixed pipeline — it keeps a running task ledger, decides which agent is best
+      suited to act next given everything learned so far, and re-plans as new information comes
+      in, instead of a human wiring "agent A always hands off to agent B."
+    </p>
+    <p>
+      The question I actually cared about: does that dynamic selection logic still work cleanly
+      when "the next agent to call" is a remote A2A endpoint instead of an in-process object? In
+      the original Magentic-One, the manager's worker agents (WebSurfer, Coder, FileSurfer,
+      ComputerTerminal) all live in the same process. Mine didn't — the manager had to go out over
+      A2A for every delegation, and results had to come back the same way before the ledger could
+      update.
+    </p>
+
+    <figure>
+      <div class="diagram-scroll">
+        <svg viewBox="0 0 780 460" style="min-width:620px;width:100%;" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Magentic manager with a task ledger dispatching work over A2A to three Foundry worker agents, then synthesizing their results">
+          <defs>
+            <marker id="arrow-swarm" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M0,0 L10,5 L0,10 z" fill="var(--text-dim)"></path>
+            </marker>
+          </defs>
+
+          <rect x="250" y="20" width="280" height="72" rx="9" fill="var(--bg-raised)" stroke="var(--teal)" stroke-width="1.5"></rect>
+          <text x="390" y="48" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="14" font-weight="700" fill="#fff">Magentic manager</text>
+          <text x="390" y="66" text-anchor="middle" font-family="Inter,sans-serif" font-size="11" fill="var(--text-dim)">task ledger · picks next agent</text>
+          <text x="390" y="82" text-anchor="middle" font-family="Inter,sans-serif" font-size="11" fill="var(--text-dim)">re-plans as results return</text>
+
+          <line x1="330" y1="92" x2="140" y2="150" stroke="var(--text-dim)" stroke-width="1.5" marker-end="url(#arrow-swarm)"></line>
+          <line x1="390" y1="92" x2="390" y2="150" stroke="var(--text-dim)" stroke-width="1.5" marker-end="url(#arrow-swarm)"></line>
+          <line x1="450" y1="92" x2="640" y2="150" stroke="var(--text-dim)" stroke-width="1.5" marker-end="url(#arrow-swarm)"></line>
+          <text x="180" y="122" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="10" fill="var(--amber)">A2A task</text>
+          <text x="410" y="122" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="10" fill="var(--amber)">A2A task</text>
+          <text x="600" y="122" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="10" fill="var(--amber)">A2A task</text>
+
+          <rect x="30" y="152" width="220" height="86" rx="8" fill="var(--bg-raised)" stroke="var(--border)"></rect>
+          <rect x="30" y="152" width="5" height="86" fill="var(--teal)"></rect>
+          <text x="140" y="176" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="12.5" font-weight="700" fill="#fff">research-agent</text>
+          <text x="140" y="194" text-anchor="middle" font-family="Inter,sans-serif" font-size="10.5" fill="var(--text-dim)">Bing + internal index</text>
+          <text x="140" y="210" text-anchor="middle" font-family="Inter,sans-serif" font-size="10.5" fill="var(--text-dim)">Foundry incoming A2A</text>
+          <text x="140" y="226" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="9.5" fill="var(--text-dim)">agent card @ /.well-known/agent.json</text>
+
+          <rect x="280" y="152" width="220" height="86" rx="8" fill="var(--bg-raised)" stroke="var(--border)"></rect>
+          <rect x="280" y="152" width="5" height="86" fill="var(--teal)"></rect>
+          <text x="390" y="176" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="12.5" font-weight="700" fill="#fff">data-agent</text>
+          <text x="390" y="194" text-anchor="middle" font-family="Inter,sans-serif" font-size="10.5" fill="var(--text-dim)">code interpreter</text>
+          <text x="390" y="210" text-anchor="middle" font-family="Inter,sans-serif" font-size="10.5" fill="var(--text-dim)">Foundry incoming A2A</text>
+          <text x="390" y="226" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="9.5" fill="var(--text-dim)">agent card @ /.well-known/agent.json</text>
+
+          <rect x="530" y="152" width="220" height="86" rx="8" fill="var(--bg-raised)" stroke="var(--border)"></rect>
+          <rect x="530" y="152" width="5" height="86" fill="var(--teal)"></rect>
+          <text x="640" y="176" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="12.5" font-weight="700" fill="#fff">reviewer-agent</text>
+          <text x="640" y="194" text-anchor="middle" font-family="Inter,sans-serif" font-size="10.5" fill="var(--text-dim)">no tools, weaker model</text>
+          <text x="640" y="210" text-anchor="middle" font-family="Inter,sans-serif" font-size="10.5" fill="var(--text-dim)">Foundry incoming A2A</text>
+          <text x="640" y="226" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="9.5" fill="var(--text-dim)">agent card @ /.well-known/agent.json</text>
+
+          <line x1="140" y1="238" x2="360" y2="290" stroke="var(--border)" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#arrow-swarm)"></line>
+          <line x1="390" y1="238" x2="390" y2="290" stroke="var(--border)" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#arrow-swarm)"></line>
+          <line x1="640" y1="238" x2="420" y2="290" stroke="var(--border)" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#arrow-swarm)"></line>
+          <text x="240" y="270" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="10" fill="var(--text-dim)">result</text>
+          <text x="410" y="270" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="10" fill="var(--text-dim)">result</text>
+          <text x="540" y="270" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="10" fill="var(--text-dim)">result</text>
+
+          <rect x="270" y="292" width="240" height="60" rx="8" fill="var(--bg-raised)" stroke="rgba(94,234,212,0.4)"></rect>
+          <text x="390" y="316" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="12.5" font-weight="700" fill="var(--teal)">ledger updated</text>
+          <text x="390" y="334" text-anchor="middle" font-family="Inter,sans-serif" font-size="10.5" fill="var(--text-dim)">manager re-plans next step</text>
+
+          <line x1="390" y1="352" x2="390" y2="380" stroke="var(--text-dim)" stroke-width="1.5" stroke-dasharray="2 3"></line>
+          <text x="410" y="370" font-family="'JetBrains Mono',monospace" font-size="9.5" fill="var(--text-dim)">loop until done</text>
+
+          <rect x="250" y="382" width="280" height="60" rx="8" fill="var(--bg-raised)" stroke="rgba(74,222,128,0.4)"></rect>
+          <rect x="250" y="382" width="5" height="60" fill="var(--ok)"></rect>
+          <text x="390" y="406" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="12.5" font-weight="700" fill="var(--ok)">final synthesis</text>
+          <text x="390" y="424" text-anchor="middle" font-family="Inter,sans-serif" font-size="10.5" fill="var(--text-dim)">manager returns the answer to the caller</text>
+        </svg>
+      </div>
+      <figcaption>Fig. 1 — Every delegation and every result crosses an A2A hop. The manager's ledger logic doesn't change; what changes is that "call the agent" now means "make a network call, with auth and content-safety policy attached."</figcaption>
+    </figure>
+
+    <p>
+      In practice this worked. I gave the swarm an intentionally open-ended prompt — "how has our
+      internal API error rate trended over the last two quarters, and is it worth a design review"
+      — and watched the manager route: research first, data agent for the actual number-crunching,
+      research again once the data agent surfaced a gap, reviewer last to sanity-check the
+      conclusion before answering. Nothing about that sequence was hand-coded; the manager decided
+      it from the ledger each time. The interesting part is what stayed the same versus a
+      single-process build: the manager's decision-making logic didn't need to know or care that
+      its workers were remote. A2A abstracted that difference away almost completely.
+    </p>
+  </section>
+
+  <section class="wrap">
+    <h2>what-ate-saturday --three-things-that-werent-obvious</h2>
+    <div class="roadmap">
+      <div class="card">
+        <h3>Agent cards are a snapshot, not a directory</h3>
+        <p>The card is fetched and cached at wiring time. If I changed a worker agent's skills or model after the manager had already discovered it, nothing broke loudly — the manager just kept acting on stale capabilities until I refreshed it. Worth building a deliberate re-discovery step rather than assuming it's live.</p>
+      </div>
+      <div class="card">
+        <h3>Protocol version mismatches fail quietly</h3>
+        <p>Foundry supports both A2A v1.0 and v0.3. Pointing one agent's outbound tool at a v0.3 assumption while its target had been upgraded produced a working-looking call with a subtly malformed response, not a clean error. Pin the version explicitly on both sides.</p>
+      </div>
+      <div class="card">
+        <h3>Every hop is a policy surface, not just the entry point</h3>
+        <p>Because Foundry applies identity, content-safety, and audit logging per A2A hop, a prompt that's fine going into the manager can still get filtered three hops later at the reviewer agent — which is the right behavior, but it means testing the swarm end-to-end, not just testing each agent in isolation.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap">
+    <h2>my-take --closing-thoughts</h2>
+    <p>
+      The thing I went in skeptical about — whether a dynamic, ledger-driven orchestration
+      pattern like Magentic actually holds up once you stop cheating with in-process objects —
+      turned out to be the part that worked best. The manager doesn't need to know an agent is
+      remote; A2A's job is exactly to make that distinction disappear. What doesn't disappear is
+      everything downstream of "now it's a network call": discovery going stale, version drift
+      between caller and callee, and policy that has to be verified at every hop instead of
+      assumed from the one at the front door. None of those are protocol failures — they're the
+      normal cost of moving from a demo to something that looks like a real distributed system,
+      just showing up faster than I expected because A2A makes the distributed part so easy to
+      set up in the first place.
+    </p>
+    <p>
+      Next weekend project, if I get to it: point the reviewer agent's A2A endpoint at something
+      outside Foundry entirely — a locally hosted agent on a different framework — to see whether
+      "regardless of framework or cloud" holds up as well as the docs claim once identity and
+      content-safety expectations don't match on both sides.
+    </p>
+  </section>
+
+  <section class="wrap">
+    <h2>sources --further-reading</h2>
+    <div class="contact-links">
+      <a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/agent-to-agent" target="_blank" rel="noopener">Microsoft Learn →<span class="src">"Connect to an A2A agent endpoint from Foundry Agent Service"</span></a>
+      <a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/enable-agent-to-agent-endpoint" target="_blank" rel="noopener">Microsoft Learn →<span class="src">"Enable incoming A2A on a Foundry agent"</span></a>
+      <a href="https://devblogs.microsoft.com/foundry/agent-service-build2026/" target="_blank" rel="noopener">Microsoft Foundry Blog →<span class="src">"Build and run agents at scale with Microsoft Foundry," Build 2026</span></a>
+      <a href="https://azure.microsoft.com/en-us/blog/agent-factory-connecting-agents-apps-and-data-with-new-open-standards-like-mcp-and-a2a/" target="_blank" rel="noopener">Azure Blog →<span class="src">"Agent Factory: Connecting agents, apps, and data with new open standards like MCP and A2A"</span></a>
+      <a href="https://learn.microsoft.com/en-us/semantic-kernel/frameworks/agent/agent-orchestration/magentic" target="_blank" rel="noopener">Microsoft Learn →<span class="src">"Magentic Agent Orchestration" — Semantic Kernel</span></a>
+      <a href="https://microsoft.github.io/autogen/stable/user-guide/agentchat-user-guide/magentic-one.html" target="_blank" rel="noopener">AutoGen docs →<span class="src">"Magentic-One" — orchestrator, task ledger, and worker agent design</span></a>
+      <a href="https://en.wikipedia.org/wiki/Agent2Agent" target="_blank" rel="noopener">Wikipedia →<span class="src">"Agent2Agent" protocol overview</span></a>
+    </div>
+    <p style="margin-top:22px;">Related on this site: <a href="hugging-face-incident-postmortem.html">When the model broke its own sandbox</a> · <a href="../owasp-agentic-top10.html">OWASP Top 10 for Agentic Applications</a></p>
+  </section>
+</main>
+
+<footer class="wrap">
+  Vivek Nidhi · DevSecOps &amp; AI Security Engineer ·
+  <a href="index.html">back to blog</a>
+</footer>
+
+</body>
+</html>
