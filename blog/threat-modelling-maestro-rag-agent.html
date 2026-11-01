@@ -167,6 +167,17 @@
   .contact-links{ display:flex; flex-wrap:wrap; gap: 10px 22px; font-family:'JetBrains Mono', monospace; font-size: 14px; }
   .contact-links .src{ display:block; color: var(--text-dim); font-size: 12px; margin-top: 2px; }
 
+  /* ---------- tool cards ---------- */
+  .tool-grid{ display:grid; grid-template-columns: repeat(2, 1fr); gap:14px; margin: 4px 0 8px; }
+  @media (max-width: 560px){ .tool-grid{ grid-template-columns: 1fr; } }
+  .tool-card{ border:1px solid var(--border); background: var(--bg-raised); border-radius: 10px; padding: 18px 20px; display:flex; gap:14px; align-items:flex-start; }
+  .tool-icon{ flex: 0 0 auto; width:40px; height:40px; border-radius:8px; background: rgba(94,234,212,0.08); border:1px solid rgba(94,234,212,0.25); display:flex; align-items:center; justify-content:center; }
+  .tool-icon svg{ width:20px; height:20px; }
+  .tool-body h3{ margin: 0 0 4px; font-size: 14.5px; }
+  .tool-body .tool-sub{ font-family:'JetBrains Mono', monospace; font-size: 10.5px; color: var(--amber); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
+  .tool-body p{ margin: 0; font-size: 13px; color: var(--text-dim); }
+  .tool-body a.repo{ display:inline-block; margin-top: 8px; font-family:'JetBrains Mono', monospace; font-size: 12px; }
+
   footer{ border-top: 1px solid var(--border); padding: 26px 0 40px; color: var(--text-dim); font-family:'JetBrains Mono', monospace; font-size: 12.5px; }
   footer a{ color: var(--text-dim); }
   footer a:hover{ color: var(--teal); }
@@ -555,6 +566,68 @@ done — manual model called the shape, MAESTRO called the count</p>
       query and noticing the answer changed shape between runs. No threat-modelling framework, manual or
       automated, predicts "your defense is an accident of a config default" — that one needed hands on the
       keyboard after the model was built, not instead of it.
+    </p>
+  </section>
+
+  <section class="wrap">
+    <h2>next-round --automating-the-playbook</h2>
+    <p class="lede">The manual tiers and the MAESTRO scan told me where to aim. The next pass runs that playbook automatically, on a schedule, instead of by hand in a terminal. Four tools I'm shortlisting for it:</p>
+
+    <div class="tool-grid">
+      <div class="tool-card">
+        <div class="tool-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#5eead4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>
+        </div>
+        <div class="tool-body">
+          <div class="tool-sub">CLI + library</div>
+          <h3>Promptfoo</h3>
+          <p>Open-source eval and red-team harness for LLM apps. Define test cases as config and it fires a library of adversarial prompts — jailbreaks, injections, PII probes — at your endpoint, then grades the output automatically. Closest thing to a CI test suite for prompt safety, and it slots into a pipeline the same way a unit-test runner would.</p>
+          <a class="repo" href="https://www.promptfoo.dev/" target="_blank" rel="noopener">promptfoo.dev →</a>
+        </div>
+      </div>
+
+      <div class="tool-card">
+        <div class="tool-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#5eead4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 6v6c0 5 3.4 8.5 8 10 4.6-1.5 8-5 8-10V6l-8-4Z"></path><path d="m9 12 2 2 4-4"></path></svg>
+        </div>
+        <div class="tool-body">
+          <div class="tool-sub">Microsoft · Python</div>
+          <h3>PyRIT</h3>
+          <p>The Python Risk Identification Tool for generative AI, built by Microsoft's own AI Red Team. Where most harnesses fire a static prompt list, PyRIT orchestrates multi-turn adversarial conversations — including crescendo-style gradual escalation — and scores each response against the target, closer to tier 8 of the manual playbook than tier 0.</p>
+          <a class="repo" href="https://github.com/microsoft/PyRIT" target="_blank" rel="noopener">github.com/microsoft/PyRIT →</a>
+        </div>
+      </div>
+
+      <div class="tool-card">
+        <div class="tool-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#5eead4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z"></path><path d="M12 8v4l3 3"></path></svg>
+        </div>
+        <div class="tool-body">
+          <div class="tool-sub">Eval framework</div>
+          <h3>DeepEval</h3>
+          <p>An open-source LLM evaluation framework that runs as pytest-style unit tests. Started as a quality tool — RAG faithfulness, answer relevancy, hallucination — and has grown a real red-teaming surface alongside it: safety metrics for bias, toxicity, and PII leakage sit in the same test file as the quality checks.</p>
+          <a class="repo" href="https://github.com/confident-ai/deepeval" target="_blank" rel="noopener">github.com/confident-ai/deepeval →</a>
+        </div>
+      </div>
+
+      <div class="tool-card">
+        <div class="tool-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#5eead4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><circle cx="12" cy="12" r="4"></circle><line x1="12" y1="3" x2="12" y2="8"></line></svg>
+        </div>
+        <div class="tool-body">
+          <div class="tool-sub">NVIDIA</div>
+          <h3>Garak</h3>
+          <p>A generative-AI vulnerability scanner with a large, actively maintained probe library — prompt injection, jailbreaks, data leakage, hallucination, encoding tricks. It shines against a model you can query directly and repeatedly, so it's most at home scanning local or self-hosted models rather than a rate-limited hosted API.</p>
+          <a class="repo" href="https://github.com/NVIDIA/garak" target="_blank" rel="noopener">github.com/NVIDIA/garak →</a>
+        </div>
+      </div>
+    </div>
+
+    <p>
+      None of these replace the manual tiers — Tier 8's crescendo and Tier 11's indirect injection still need a human
+      deciding what "innocuous-looking" means for this specific agent. What they replace is re-typing the same 40-odd
+      payloads by hand every time the system prompt changes. More on how this shortlist performs once I've actually
+      wired one up against ACME Assistant.
     </p>
   </section>
 
