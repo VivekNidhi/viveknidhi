@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Threat-modelling my RAG agent with MAESTRO — Vivek Nidhi</title>
+<meta name="description" content="Running a synthetic RAG-agent engagement through a manual trust-boundary model, the OWASP four-layer LLM model, and an automated MAESTRO scan — what each approach caught, and what only showed up once I combined them.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #0a0f14;
+    --bg-raised: #0f1720;
+    --grid-line: rgba(94, 234, 212, 0.06);
+    --text: #dfe7ec;
+    --text-dim: #7c8a97;
+    --teal: #5eead4;
+    --amber: #f5a623;
+    --ok: #4ade80;
+    --crit: #f87171;
+    --border: #1c2830;
+  }
+  *{ box-sizing: border-box; }
+  html{ scroll-behavior: smooth; }
+  body{
+    margin:0;
+    background:
+      linear-gradient(var(--grid-line) 1px, transparent 1px) 0 0/40px 40px,
+      linear-gradient(90deg, var(--grid-line) 1px, transparent 1px) 0 0/40px 40px,
+      var(--bg);
+    color: var(--text);
+    font-family: 'Inter', system-ui, sans-serif;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  a{ color: var(--teal); text-decoration: none; }
+  a:hover{ text-decoration: underline; }
+  a:focus-visible{ outline: 2px solid var(--teal); outline-offset: 3px; }
+  .wrap{ max-width: 780px; margin: 0 auto; padding: 0 24px; }
+  header{
+    border-bottom: 1px solid var(--border);
+    background: rgba(10,15,20,0.85);
+    backdrop-filter: blur(6px);
+    position: sticky; top:0; z-index: 10;
+  }
+  .nav{ display:flex; align-items:center; justify-content:space-between; padding: 16px 0; }
+  .brand{ font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 15px; color: var(--text); letter-spacing: 0.02em; }
+  .brand span{ color: var(--teal); }
+  .nav-links{ display:flex; gap: 24px; font-family:'JetBrains Mono', monospace; font-size: 13px; }
+  .nav-links a{ color: var(--text-dim); }
+  .nav-links a:hover{ color: var(--teal); }
+
+  .hero{ padding: 56px 0 20px; }
+  .eyebrow{ font-family:'JetBrains Mono', monospace; font-size: 12px; color: var(--amber); text-transform: uppercase; letter-spacing: 0.14em; margin: 0 0 18px; }
+  .eyebrow::before{ content:"// "; color: var(--text-dim); }
+
+  .terminal{ border: 1px solid var(--border); border-radius: 10px; background: var(--bg-raised); box-shadow: 0 20px 60px -20px rgba(0,0,0,0.6); overflow: hidden; margin-bottom: 30px; }
+  .term-bar{ display:flex; align-items:center; gap:8px; padding: 10px 14px; border-bottom: 1px solid var(--border); background: #0c1319; }
+  .dot{ width:10px; height:10px; border-radius:50%; }
+  .dot.r{ background:#ff5f57; } .dot.y{ background:#febc2e; } .dot.g{ background:#28c840; }
+  .term-title{ margin-left: 8px; font-family:'JetBrains Mono', monospace; font-size:12px; color: var(--text-dim); }
+  .term-body{ padding: 20px 22px 24px; font-family:'JetBrains Mono', monospace; font-size: 13.5px; }
+  .kg{ color: #4ade80; }
+  .ko{ color: var(--amber); }
+  .k-out{ color: #c9d3da; margin: 3px 0 0; }
+
+  .name{ font-family:'JetBrains Mono', monospace; font-weight: 800; font-size: clamp(24px, 4.4vw, 34px); color: #fff; margin: 0 0 10px; letter-spacing: -0.01em; line-height:1.28; }
+  .role{ font-size: 15.5px; color: var(--teal); font-family:'JetBrains Mono', monospace; font-weight: 500; margin: 0 0 18px; }
+  .bio{ color: var(--text); font-size: 15.5px; }
+  .bio strong{ color:#fff; }
+  .meta{ font-family:'JetBrains Mono', monospace; font-size: 12.5px; color: var(--text-dim); margin: 18px 0 0; }
+
+  .tldr{ border: 1px solid rgba(74,222,128,0.35); background: rgba(74,222,128,0.07); border-radius: 8px; padding: 18px 20px; font-size: 14.5px; color: var(--text); margin: 30px 0 8px; }
+  .tldr strong{ color: var(--ok); font-family:'JetBrains Mono', monospace; }
+
+  .stats{ display:grid; grid-template-columns: repeat(4,1fr); gap:1px; background:var(--border); border:1px solid var(--border); border-radius:10px; overflow:hidden; margin: 24px 0 8px; }
+  @media (max-width: 560px){ .stats{ grid-template-columns: repeat(2,1fr); } }
+  .stat{ background: var(--bg-raised); padding: 14px 12px; }
+  .stat .n{ font-family:'JetBrains Mono', monospace; font-weight:800; font-size: 1.9rem; line-height:1; color: var(--text); }
+  .stat.crit .n{ color: var(--crit); }
+  .stat.high .n{ color: var(--amber); }
+  .stat.safe .n{ color: var(--ok); }
+  .stat .l{ margin-top:6px; font-size: 11.5px; color: var(--text-dim); }
+
+  main section{ padding: 40px 0; border-top: 1px solid var(--border); }
+  main section:first-of-type{ border-top:none; }
+  h2{ font-family:'JetBrains Mono', monospace; font-size: 13px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--text-dim); margin: 0 0 20px; }
+  h2::before{ content:"$ "; color: var(--teal); }
+  h3{ font-family:'JetBrains Mono', monospace; font-size: 15.5px; color: #fff; margin: 26px 0 10px; letter-spacing:-0.005em; }
+
+  p{ margin: 0 0 16px; color: var(--text); font-size: 15.5px; }
+  p.lede{ color: var(--text-dim); font-size: 15px; }
+  ul{ margin: 0 0 16px; padding-left: 20px; }
+  li{ margin-bottom: 8px; font-size: 15px; color: var(--text); }
+  strong{ color: #fff; }
+  code{ font-family:'JetBrains Mono', monospace; font-size: 0.88em; background: rgba(94,234,212,0.08); color: var(--teal); padding: 2px 5px; border-radius: 4px; }
+
+  figure{ margin: 26px 0; }
+  figcaption{ font-family:'JetBrains Mono', monospace; font-size: 12px; color: var(--text-dim); text-align:center; margin-top: 10px; }
+  .diagram-scroll{ overflow-x: auto; -webkit-overflow-scrolling: touch; border: 1px solid var(--border); border-radius: 10px; background: var(--bg-raised); padding: 18px 16px; }
+  .diagram-scroll svg{ display:block; }
+
+  .callout{ background: rgba(245,166,35,0.07); border: 1px solid rgba(245,166,35,0.3); border-radius: 10px; padding: 16px 18px; font-size: 14px; color: var(--text); margin: 20px 0; }
+  .callout strong{ color: var(--amber); font-family:'JetBrains Mono', monospace; }
+
+  /* ---------- framework compare ---------- */
+  .compare{ display:grid; grid-template-columns: 1fr 1fr; gap:14px; margin: 4px 0 20px; }
+  @media (max-width: 620px){ .compare{ grid-template-columns: 1fr; } }
+  .compare-card{ border:1px solid var(--border); background: var(--bg-raised); border-radius: 10px; padding: 18px 20px; }
+  .compare-card .tag{ display:inline-block; font-family:'JetBrains Mono', monospace; font-size: 10.5px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; padding: 3px 9px; border-radius: 100px; margin-bottom: 10px; }
+  .compare-card.manual .tag{ color: var(--teal); background: rgba(94,234,212,0.1); border:1px solid rgba(94,234,212,0.3); }
+  .compare-card.auto .tag{ color: var(--amber); background: rgba(245,166,35,0.1); border:1px solid rgba(245,166,35,0.3); }
+  .compare-card h3{ margin: 0 0 10px; }
+  .compare-card ul{ margin: 0; padding-left: 18px; }
+  .compare-card li{ font-size: 13.5px; color: var(--text-dim); margin-bottom: 6px; }
+  .compare-card li strong{ color: var(--text); font-weight:600; }
+
+  /* ---------- risk summary ---------- */
+  .risk-panel{ border:1px solid var(--border); background: var(--bg-raised); border-radius: 10px; padding: 20px 22px; margin: 4px 0 22px; display:flex; align-items:center; gap:22px; flex-wrap:wrap; }
+  .risk-score{ flex: 0 0 auto; width:76px; height:76px; border-radius:50%; border: 4px solid var(--amber); display:flex; align-items:center; justify-content:center; font-family:'JetBrains Mono', monospace; font-weight:800; font-size: 22px; color:#fff; }
+  .risk-label{ flex: 1 1 160px; }
+  .risk-label .t{ font-weight:700; color:#fff; font-size: 14.5px; }
+  .risk-label .s{ color: var(--text-dim); font-size: 12.5px; margin-top:2px; }
+  .risk-breakdown{ display:flex; gap: 18px; flex-wrap:wrap; }
+  .risk-breakdown div{ text-align:center; }
+  .risk-breakdown .n{ font-family:'JetBrains Mono', monospace; font-weight:800; font-size: 1.3rem; }
+  .risk-breakdown .l{ font-size: 10.5px; color: var(--text-dim); text-transform:uppercase; letter-spacing:0.05em; }
+  .risk-breakdown .critical{ color: var(--crit); }
+  .risk-breakdown .high{ color: var(--amber); }
+  .risk-breakdown .medium{ color: #facc15; }
+  .risk-breakdown .low{ color: var(--ok); }
+
+  /* ---------- attack path cards ---------- */
+  .path-card{ border:1px solid var(--border); border-left: 3px solid var(--crit); background: var(--bg-raised); border-radius: 10px; padding: 18px 20px 20px; margin-bottom: 16px; }
+  .path-head{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom: 14px; flex-wrap: wrap; }
+  .path-title{ font-family:'JetBrains Mono', monospace; font-weight:700; font-size: 14.5px; color:#fff; }
+  .path-sub{ font-size: 12px; color: var(--text-dim); margin-top: 3px; }
+  .sev-tag{ font-family:'JetBrains Mono', monospace; font-size: 10.5px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; padding: 4px 10px; border-radius: 100px; background: rgba(248,113,113,0.1); border:1px solid rgba(248,113,113,0.35); color: var(--crit); white-space:nowrap; }
+  .path-flow{ display:flex; align-items:center; gap:0; flex-wrap:wrap; overflow-x:auto; padding-bottom: 4px; }
+  .path-hop{ flex: 0 0 auto; border:1px solid var(--border); border-radius: 7px; padding: 9px 12px; background: #0c1319; min-width: 128px; }
+  .path-hop.entry{ border-color: rgba(94,234,212,0.4); }
+  .path-hop.target{ border-color: rgba(245,166,35,0.5); }
+  .path-hop .hn{ font-family:'JetBrains Mono', monospace; font-weight:700; font-size: 12.5px; color: var(--text); }
+  .path-hop .hm{ font-family:'JetBrains Mono', monospace; font-size: 10px; color: var(--text-dim); margin-top: 2px; }
+  .path-hop .hr{ font-family:'JetBrains Mono', monospace; font-size: 9.5px; font-weight:700; letter-spacing:0.04em; margin-top: 4px; }
+  .path-hop.entry .hr{ color: var(--teal); }
+  .path-hop.target .hr{ color: var(--amber); }
+  .path-arrow{ flex: 0 0 auto; color: var(--text-dim); font-family:'JetBrains Mono', monospace; font-size: 13px; padding: 0 8px; }
+
+  /* ---------- owasp mapping table ---------- */
+  .table-scroll{ overflow-x:auto; border:1px solid var(--border); border-radius: 10px; background: var(--bg-raised); }
+  table.owasp-map{ width:100%; border-collapse: collapse; font-size: 13.5px; }
+  table.owasp-map th{ text-align:left; font-family:'JetBrains Mono', monospace; font-size: 10.5px; text-transform: uppercase; letter-spacing:0.06em; color: var(--text-dim); padding: 12px 14px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  table.owasp-map td{ padding: 12px 14px; border-bottom: 1px solid var(--border); vertical-align: top; color: var(--text-dim); }
+  table.owasp-map tr:last-child td{ border-bottom:none; }
+  table.owasp-map td.risk{ font-family:'JetBrains Mono', monospace; color: var(--amber); font-weight:700; white-space:nowrap; }
+  table.owasp-map td.test{ color: var(--text); font-weight:600; white-space: nowrap; font-family:'JetBrains Mono', monospace; font-size: 12.5px; }
+  table.owasp-map td.yes{ color: var(--ok); font-weight:700; }
+  table.owasp-map td.conf{ color: var(--crit); font-weight:700; }
+
+  .roadmap{ display:grid; grid-template-columns: repeat(auto-fit, minmax(210px,1fr)); gap:14px; margin-top: 4px; }
+  .card{ border:1px solid var(--border); background: var(--bg-raised); border-radius: 8px; padding: 16px 18px; }
+  .card h3{ margin:0 0 6px; font-size:13.5px; color:#fff; }
+  .card p{ margin:0; font-size:13px; color: var(--text-dim); }
+
+  .contact-links{ display:flex; flex-wrap:wrap; gap: 10px 22px; font-family:'JetBrains Mono', monospace; font-size: 14px; }
+  .contact-links .src{ display:block; color: var(--text-dim); font-size: 12px; margin-top: 2px; }
+
+  footer{ border-top: 1px solid var(--border); padding: 26px 0 40px; color: var(--text-dim); font-family:'JetBrains Mono', monospace; font-size: 12.5px; }
+  footer a{ color: var(--text-dim); }
+  footer a:hover{ color: var(--teal); }
+
+  @media (max-width: 560px){ .term-body{ font-size: 12px; } }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap nav">
+    <a class="brand" href="../index.html">vivek<span>@</span>nidhi</a>
+    <nav class="nav-links">
+      <a href="index.html">blog</a>
+      <a href="../index.html">home</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <section class="hero wrap">
+    <p class="eyebrow">./blog/threat-modelling-maestro-rag-agent</p>
+
+    <div class="terminal">
+      <div class="term-bar">
+        <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+        <span class="term-title">vivek@secops: ~/threat-model</span>
+      </div>
+      <div class="term-body">
+        <div class="kg">┌─(vivek@secops)-[~/threat-model]</div>
+        <div><span class="kg">└─$ </span><span class="ko">./model.sh --target rag-agent --methods manual,maestro</span></div>
+        <p class="k-out" style="margin-bottom:0;">[manual]&nbsp; trust boundaries .. 3 identified, threat actors .. 3 identified<br>
+[manual]&nbsp; owasp-llm-top10 mapping .. 6 categories applicable<br>
+[maestro] automated scan .. 35 threats found, risk 48/100 (medium)<br>
+[maestro] validated attack paths .. 35/35, 4 critical<br>
+done — manual model called the shape, MAESTRO called the count</p>
+      </div>
+    </div>
+
+    <h1 class="name">Threat-modelling my RAG agent with MAESTRO</h1>
+    <p class="role">A manual trust-boundary model, the OWASP four-layer LLM model, and an automated MAESTRO scan — run against the same target, compared side by side.</p>
+    <p class="bio">
+      Before I attack anything I build a model of it first — scope, trust boundaries, threat actors, the works.
+      For this engagement I ran the same local n8n + Qdrant + Ollama RAG agent through two very different
+      processes: a manual pass using Microsoft-style data-flow diagramming and the OWASP four-layer model for
+      LLM applications, then an automated pass using <strong>MAESTRO</strong> — Cloud Security Alliance's
+      Multi-Agent Environment, Security, Threat, Risk, and Outcome framework for agentic systems. Same target,
+      same synthetic canary secret standing in for a real crown jewel, two different lenses. This is what each
+      one found, and why I don't trust either one alone.
+    </p>
+    <p class="meta">01 Nov 2026 · ~8 min read · "ACME Dynamics" is a fictional company used for the test data</p>
+
+    <div class="tldr">
+      <strong>tl;dr --summary</strong><br>
+      The manual model told me <em>where</em> to look — three trust boundaries, a content-poisoner actor nobody
+      had written down before, and which OWASP LLM categories actually applied. The MAESTRO automated scan told
+      me <em>how many</em> and <em>how bad</em> — 35 threats, 4 of them critical, every attack path validated
+      against the real asset graph instead of guessed. Run only the automated scan and you get a number with no
+      judgment behind it. Run only the manual model and you get judgment that doesn't scale past a handful of
+      components. The two together are what actually held up once I started attacking the thing for real.
+    </div>
+
+    <div class="stats">
+      <div class="stat"><div class="n">2</div><div class="l">Modelling methods used</div></div>
+      <div class="stat"><div class="n">3</div><div class="l">Trust boundaries</div></div>
+      <div class="stat high"><div class="n">35</div><div class="l">MAESTRO threats found</div></div>
+      <div class="stat crit"><div class="n">4</div><div class="l">Critical, validated</div></div>
+    </div>
+  </section>
+
+  <section class="wrap">
+    <h2>the-engagement --scope-and-target</h2>
+    <p>
+      The target was <code>ACME Assistant</code>, an n8n AI Agent workflow answering questions over a handbook
+      indexed in Qdrant, served by a local Ollama <code>llama3.1:8b</code> model — the same shape of stack
+      I've <a href="rag-agent-prompt-injection-red-team.html">red-teamed before</a>, rebuilt here as a proper
+      sandboxed engagement rather than a weekend experiment. The asset under test was a synthetic canary secret
+      sitting in a "restricted" section of the knowledge base, protected only by system-prompt instructions —
+      deliberately the weakest possible defense, so the model would have something real to find.
+    </p>
+    <ul>
+      <li><strong>In scope:</strong> the n8n agent workflow, the Qdrant retrieval path, the Ollama embedding and chat models, and the document-ingestion pipeline feeding the vector store.</li>
+      <li><strong>Out of scope:</strong> model weights and training data, host/Docker infrastructure, denial-of-service.</li>
+      <li><strong>Rules of engagement:</strong> own local sandbox only, synthetic data only, no production systems touched.</li>
+    </ul>
+    <p>
+      Scope first, model second, attacks last — in that order. A threat model built after the attack playbook is
+      just a justification for whatever you already tried.
+    </p>
+  </section>
+
+  <section class="wrap">
+    <h2>the-target --architecture</h2>
+    <p class="lede">Two independent data paths feed the same vector store — that seam is where most of what follows actually lives.</p>
+
+    <figure>
+      <div class="diagram-scroll">
+        <svg viewBox="0 0 880 300" style="min-width:680px;width:100%;" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Architecture: a document ingestion path embeds files via Ollama into Qdrant, and a separate n8n chat agent retrieves from the same Qdrant store and calls a local Ollama chat model to answer the user">
+          <defs>
+            <marker id="arrow-mt" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M0,0 L10,5 L0,10 z" fill="var(--text-dim)"></path>
+            </marker>
+          </defs>
+
+          <rect x="20" y="36" width="150" height="56" rx="8" fill="var(--bg)" stroke="var(--text-dim)" stroke-width="1.2" stroke-dasharray="4 3"></rect>
+          <text x="95" y="60" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="11" font-weight="700" fill="var(--text)">docs/*.md</text>
+          <text x="95" y="77" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="9.5" fill="var(--amber)">ingestion attack surface</text>
+
+          <line x1="170" y1="64" x2="225" y2="64" stroke="var(--text-dim)" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#arrow-mt)"></line>
+
+          <rect x="225" y="36" width="150" height="56" rx="8" fill="var(--bg)" stroke="#a78bfa" stroke-width="1.5"></rect>
+          <text x="300" y="60" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="11" font-weight="700" fill="var(--text)">Ollama</text>
+          <text x="300" y="76" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="9.5" fill="var(--text-dim)">nomic-embed-text</text>
+
+          <line x1="375" y1="64" x2="430" y2="64" stroke="var(--amber)" stroke-width="1.5" marker-end="url(#arrow-mt)"></line>
+
+          <rect x="430" y="20" width="170" height="88" rx="8" fill="var(--bg)" stroke="var(--amber)" stroke-width="1.5"></rect>
+          <text x="515" y="46" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="12" font-weight="700" fill="var(--text)">Qdrant</text>
+          <text x="515" y="63" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="9.5" fill="var(--text-dim)">acme_handbook</text>
+          <text x="515" y="78" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="9.5" fill="var(--text-dim)">incl. "restricted"</text>
+          <text x="515" y="93" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="9.5" fill="var(--crit)">section (canary)</text>
+
+          <rect x="20" y="170" width="150" height="56" rx="8" fill="var(--bg)" stroke="var(--teal)" stroke-width="1.5"></rect>
+          <text x="95" y="194" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="11" font-weight="700" fill="var(--text)">Internal Staff</text>
+          <text x="95" y="210" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="9.5" fill="var(--text-dim)">chat_interface</text>
+
+          <line x1="170" y1="198" x2="225" y2="198" stroke="var(--teal)" stroke-width="2" marker-end="url(#arrow-mt)"></line>
+
+          <rect x="225" y="160" width="160" height="76" rx="8" fill="var(--bg)" stroke="var(--ok)" stroke-width="1.5"></rect>
+          <text x="305" y="186" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="12" font-weight="700" fill="var(--text)">n8n AI Agent</text>
+          <text x="305" y="203" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="9.5" fill="var(--text-dim)">orchestrator</text>
+          <text x="305" y="218" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="9.5" fill="var(--text-dim)">+ retrieve-as-tool</text>
+
+          <line x1="385" y1="188" x2="430" y2="110" stroke="var(--ok)" stroke-width="1.5" marker-end="url(#arrow-mt)"></line>
+          <text x="420" y="150" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="9" fill="var(--ok)">retrieve</text>
+
+          <line x1="385" y1="198" x2="440" y2="198" stroke="var(--text-dim)" stroke-width="1.5" marker-end="url(#arrow-mt)"></line>
+
+          <rect x="440" y="160" width="170" height="76" rx="8" fill="var(--bg)" stroke="var(--border)" stroke-width="1.5"></rect>
+          <text x="525" y="188" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="11" font-weight="700" fill="var(--text)">Ollama</text>
+          <text x="525" y="205" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="9.5" fill="var(--text-dim)">llama3.1:8b (chat)</text>
+
+          <line x1="610" y1="198" x2="660" y2="198" stroke="var(--text-dim)" stroke-width="1.5" marker-end="url(#arrow-mt)"></line>
+          <rect x="660" y="170" width="190" height="56" rx="8" fill="var(--bg)" stroke="var(--text-dim)" stroke-width="1.2"></rect>
+          <text x="755" y="194" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="11" font-weight="700" fill="var(--text)">Response to user</text>
+          <text x="755" y="210" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="9.5" fill="var(--text-dim)">no output-layer filter</text>
+
+          <rect x="20" y="256" width="560" height="34" rx="7" fill="rgba(245,166,35,0.07)" stroke="rgba(245,166,35,0.3)"></rect>
+          <text x="300" y="277" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="10.5" fill="var(--amber)">Entry needs no chat access at all — only the ingestion path, which anyone with write access can reach</text>
+        </svg>
+      </div>
+      <figcaption>Fig. 1 — Two independent entry points (chat and document ingestion) both write into the same Qdrant store, which the agent treats as a single trusted context once retrieval happens.</figcaption>
+    </figure>
+  </section>
+
+  <section class="wrap">
+    <h2>manual-model --trust-boundaries-and-actors</h2>
+    <p class="lede">The part automated scanners don't do for you: naming who's on the other side of each boundary, and why.</p>
+
+    <h3>Trust boundaries</h3>
+    <ul>
+      <li><strong>User → Chat Trigger</strong> — anyone who can reach the n8n webhook, no authentication modelled.</li>
+      <li><strong>Document source → ingestion path</strong> — anyone who can get a file into whatever feeds <code>/docs</code>, with no chat access required at all.</li>
+      <li><strong>n8n → Ollama / Qdrant</strong> — internal, assumed trusted for this engagement, but still a real boundary if that trust is ever wrong.</li>
+    </ul>
+
+    <h3>Threat actors</h3>
+    <ul>
+      <li><strong>Anonymous chat user</strong> — direct prompt injection, social engineering, jailbreak attempts.</li>
+      <li><strong>Content poisoner</strong> — can write to any source the ingestion pipeline consumes, and never touches the chat interface at all. This one doesn't show up if you only think in terms of "who talks to the bot."</li>
+      <li><strong>Insider with partial access</strong> — pivots from non-restricted to restricted content using legitimate-looking queries.</li>
+    </ul>
+
+    <div class="callout">
+      <strong>why-this-matters</strong><br>
+      The content-poisoner actor is the whole reason indirect prompt injection ends up the highest-severity
+      finding later. You don't find that actor by fuzzing the chat box — you find it by asking "who else can
+      reach this system, and through what" before you touch the keyboard.
+    </div>
+
+    <h3>OWASP Top 10 for LLM Applications — category mapping</h3>
+    <div class="table-scroll">
+      <table class="owasp-map">
+        <thead>
+          <tr><th>Category</th><th>Applies?</th><th>Status</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="test">LLM01</td><td>Prompt Injection (direct)</td><td class="yes">Yes</td></tr>
+          <tr><td class="test">LLM01</td><td>Prompt Injection (indirect)</td><td class="conf">Yes — confirmed exploitable</td></tr>
+          <tr><td class="test">LLM02</td><td>Sensitive Information Disclosure</td><td class="conf">Yes — confirmed</td></tr>
+          <tr><td class="test">LLM05</td><td>Improper Output Handling</td><td>Partial — no output-layer filter</td></tr>
+          <tr><td class="test">LLM06</td><td>Excessive Agency</td><td>Worth monitoring</td></tr>
+          <tr><td class="test">LLM08</td><td>Vector and Embedding Weaknesses</td><td class="conf">Yes — confirmed</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="wrap">
+    <h2>manual-model --owasp-four-layer-view</h2>
+    <p class="lede">A second manual lens, orthogonal to trust boundaries: which architectural layer does each risk actually live in?</p>
+
+    <figure>
+      <div class="diagram-scroll">
+        <svg viewBox="0 0 860 190" style="min-width:620px;width:100%;" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="OWASP four-layer model for LLM applications: Model, Implementation, System, Runtime">
+          <rect x="10" y="10" width="200" height="170" rx="8" fill="rgba(94,234,212,0.06)" stroke="var(--teal)" stroke-width="1.3"></rect>
+          <text x="110" y="36" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="12" font-weight="700" fill="var(--text)">1 · Model</text>
+          <text x="110" y="54" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="9.5" fill="var(--text-dim)">Is the model itself</text>
+          <text x="110" y="67" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="9.5" fill="var(--text-dim)">safe and robust?</text>
+          <text x="110" y="94" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="10" fill="var(--teal)">llama3.1:8b</text>
+
+          <rect x="220" y="10" width="200" height="170" rx="8" fill="rgba(74,222,128,0.06)" stroke="var(--ok)" stroke-width="1.3"></rect>
+          <text x="320" y="36" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="12" font-weight="700" fill="var(--text)">2 · Implementation</text>
+          <text x="320" y="54" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="9.5" fill="var(--text-dim)">RAG, guardrails,</text>
+          <text x="320" y="67" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="9.5" fill="var(--text-dim)">filters, access control</text>
+          <text x="320" y="94" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="10" fill="var(--ok)">Qdrant + prompt rules</text>
+          <text x="320" y="110" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="9" fill="var(--crit)">no deterministic filter</text>
+
+          <rect x="430" y="10" width="200" height="170" rx="8" fill="rgba(245,166,35,0.06)" stroke="var(--amber)" stroke-width="1.3"></rect>
+          <text x="530" y="36" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="12" font-weight="700" fill="var(--text)">3 · System</text>
+          <text x="530" y="54" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="9.5" fill="var(--text-dim)">APIs, infra,</text>
+          <text x="530" y="67" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="9.5" fill="var(--text-dim)">supply chain, sandbox</text>
+          <text x="530" y="94" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="10" fill="var(--amber)">n8n workflow engine</text>
+
+          <rect x="640" y="10" width="210" height="170" rx="8" fill="rgba(167,139,250,0.08)" stroke="#a78bfa" stroke-width="1.3"></rect>
+          <text x="745" y="36" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="12" font-weight="700" fill="var(--text)">4 · Runtime</text>
+          <text x="745" y="54" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="9.5" fill="var(--text-dim)">Users, agents, tools,</text>
+          <text x="745" y="67" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="9.5" fill="var(--text-dim)">social engineering</text>
+          <text x="745" y="94" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="10" fill="#a78bfa">chat users, poisoner</text>
+        </svg>
+      </div>
+      <figcaption>Fig. 2 — The OWASP GenAI Security Project's four-layer model for LLM applications, applied to ACME Assistant's own components.</figcaption>
+    </figure>
+    <p>
+      This view earns its keep when a finding doesn't fit neatly in a single OWASP LLM category: the missing
+      output-layer filter is an Implementation-layer gap regardless of which category eventually catches it, and
+      naming the layer makes it obvious which team owns the fix.
+    </p>
+  </section>
+
+  <section class="wrap">
+    <h2>automated-model --maestro</h2>
+    <p class="lede"><strong>MAESTRO</strong> — Multi-Agent Environment, Security, Threat, Risk, and Outcome — is Cloud Security Alliance's threat-modelling framework purpose-built for agentic AI systems, rather than a generic app-security checklist retrofitted onto one. I ran the same engagement's asset graph through an automated MAESTRO scan to see what a structured, repeatable process would surface that a one-off manual pass might miss.</p>
+
+    <div class="risk-panel">
+      <div class="risk-score">48</div>
+      <div class="risk-label">
+        <div class="t">Medium risk — composite score 48 / 100</div>
+        <div class="s">35 potential threats found for ACME Dynamics · 35/35 attack paths validated against the real asset graph</div>
+      </div>
+      <div class="risk-breakdown">
+        <div><div class="n critical">4</div><div class="l">Critical</div></div>
+        <div><div class="n high">14</div><div class="l">High</div></div>
+        <div><div class="n medium">14</div><div class="l">Medium</div></div>
+        <div><div class="n low">3</div><div class="l">Low</div></div>
+      </div>
+    </div>
+
+    <p>
+      The number that mattered most wasn't the risk score — it was <strong>35/35 validated</strong>. Every path
+      the scanner reported was reconstructed hop-by-hop from the actual modelled data flows between real assets,
+      not a generic "this category of system is usually vulnerable to X" guess. That's the property that made
+      the output worth triaging instead of skimming.
+    </p>
+
+    <h3>Top validated attack paths</h3>
+
+    <div class="path-card">
+      <div class="path-head">
+        <div>
+          <div class="path-title">Execution of Insecure Workflow Actions</div>
+          <div class="path-sub">1 verified hop · Internal Staff → n8n Workflow Engine</div>
+        </div>
+        <span class="sev-tag">Critical</span>
+      </div>
+      <div class="path-flow">
+        <div class="path-hop entry">
+          <div class="hn">Internal Staff</div>
+          <div class="hm">human · internal</div>
+          <div class="hr">ENTRY</div>
+        </div>
+        <span class="path-arrow">→ chat_interface (untrusted) →</span>
+        <div class="path-hop target">
+          <div class="hn">n8n Workflow Engine</div>
+          <div class="hm">orchestrator · internal</div>
+          <div class="hr">TARGET</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="path-card">
+      <div class="path-head">
+        <div>
+          <div class="path-title">Prompt Hijacking for System Instruction Bypass</div>
+          <div class="path-sub">3 verified hops · Internal Staff → Local LLM Inference</div>
+        </div>
+        <span class="sev-tag">Critical</span>
+      </div>
+      <div class="path-flow">
+        <div class="path-hop entry">
+          <div class="hn">Internal Staff</div>
+          <div class="hm">human · internal</div>
+          <div class="hr">ENTRY</div>
+        </div>
+        <span class="path-arrow">→</span>
+        <div class="path-hop">
+          <div class="hn">n8n Workflow Engine</div>
+          <div class="hm">orchestrator · internal</div>
+        </div>
+        <span class="path-arrow">→</span>
+        <div class="path-hop">
+          <div class="hn">Chat Agent</div>
+          <div class="hm">agent · internal</div>
+        </div>
+        <span class="path-arrow">→ rpc →</span>
+        <div class="path-hop target">
+          <div class="hn">Local LLM Inference</div>
+          <div class="hm">model · internal</div>
+          <div class="hr">TARGET</div>
+        </div>
+      </div>
+    </div>
+
+    <p>
+      Both paths start from the same entry point and both land on "critical" — but they're different findings
+      with different fixes. One is about what the workflow engine lets an authenticated step do; the other is
+      about how far a single hijacked instruction travels through the agent → model call chain before anything
+      checks it. A risk score alone collapses that distinction; the hop-by-hop path doesn't.
+    </p>
+
+    <h3>MITRE ATLAS — the same idea, for ML-specific tactics</h3>
+    <p>
+      Alongside MAESTRO, I cross-checked the finding set against <a href="https://atlas.mitre.org/" target="_blank" rel="noopener">MITRE ATLAS</a> (Adversarial Threat Landscape for Artificial-Intelligence Systems) — a knowledge base of adversary tactics and techniques against AI/ML systems, built as a deliberate structural mirror of MITRE ATT&amp;CK: the same tactic columns (reconnaissance, initial access, persistence, exfiltration, impact…), populated with AI-specific techniques like prompt injection, model inversion, and data poisoning instead of traditional-infrastructure ones. Content poisoning against the Qdrant store maps cleanly onto ATLAS's data-poisoning tactic, which is exactly the finding MAESTRO's automated scan and the manual trust-boundary model both independently pointed at — three different methods converging on one root cause is a stronger signal than any one of them alone.
+    </p>
+  </section>
+
+  <section class="wrap">
+    <h2>manual-vs-maestro --what-each-approach-is-actually-good-for</h2>
+    <div class="compare">
+      <div class="compare-card manual">
+        <span class="tag">Manual modelling</span>
+        <h3>Trust boundaries + OWASP layers</h3>
+        <ul>
+          <li><strong>Surfaces actors a scanner won't guess</strong> — the content-poisoner never touches the chat interface, so nothing that only models "user → bot" traffic finds it.</li>
+          <li><strong>Carries judgment about severity</strong> — knowing <em>why</em> a boundary matters, not just that one exists.</li>
+          <li><strong>Doesn't scale</strong> — fine for a six-node architecture, painful for a real multi-agent production system with dozens of tools and services.</li>
+        </ul>
+      </div>
+      <div class="compare-card auto">
+        <span class="tag">MAESTRO automated</span>
+        <h3>Asset-graph driven scan</h3>
+        <ul>
+          <li><strong>Exhaustive and repeatable</strong> — 35 paths checked the same way every run, not whatever the analyst happened to think of that day.</li>
+          <li><strong>Validates, doesn't guess</strong> — every reported path is a real verified hop between modelled assets.</li>
+          <li><strong>Only as good as the asset graph you feed it</strong> — it can't invent a trust boundary or actor you never modelled in the first place.</li>
+        </ul>
+      </div>
+    </div>
+    <p>
+      Neither replaces the other. The manual pass decides what belongs in the asset graph and why a given boundary
+      is dangerous; the automated pass then checks that graph exhaustively instead of relying on one analyst's
+      afternoon. Skip the manual step and MAESTRO scores a graph that's missing the content-poisoner actor
+      entirely. Skip MAESTRO and you're back to hoping you thought of everything.
+    </p>
+  </section>
+
+  <section class="wrap">
+    <h2>where-the-model-pointed --what-testing-later-confirmed</h2>
+    <p class="lede">The point of a threat model is that it should predict where the real findings land. This one did.</p>
+    <div class="roadmap">
+      <div class="card">
+        <h3>Indirect prompt injection via poisoned document</h3>
+        <p>High severity, LLM01 + LLM08 — exactly the content-poisoner / ingestion-boundary path both the manual model and MAESTRO flagged before a single attack was run.</p>
+      </div>
+      <div class="card">
+        <h3>Sensitive-information disclosure via refusal metadata</h3>
+        <p>Medium severity, LLM02 — the agent named a restricted item's existence and format while still withholding its value, living squarely in the Implementation-layer gap Fig. 2 called out.</p>
+      </div>
+      <div class="card">
+        <h3>Security posture relying on incidental factors</h3>
+        <p>High severity, systemic — retrieval <code>topK</code> and sampling temperature, not architecture, were doing the defensive work. A finding no automated scan surfaces, because it's about configuration drift, not a known attack pattern.</p>
+      </div>
+    </div>
+    <p>
+      That last one is the real argument for doing both: it only showed up from manually re-running the same
+      query and noticing the answer changed shape between runs. No threat-modelling framework, manual or
+      automated, predicts "your defense is an accident of a config default" — that one needed hands on the
+      keyboard after the model was built, not instead of it.
+    </p>
+  </section>
+
+  <section class="wrap">
+    <h2>sources --further-reading</h2>
+    <div class="contact-links">
+      <a href="https://cloudsecurityalliance.org/" target="_blank" rel="noopener">Cloud Security Alliance — MAESTRO →<span class="src">cloudsecurityalliance.org</span></a>
+      <a href="https://genai.owasp.org/" target="_blank" rel="noopener">OWASP GenAI Security Project →<span class="src">genai.owasp.org</span></a>
+      <a href="https://atlas.mitre.org/" target="_blank" rel="noopener">MITRE ATLAS →<span class="src">atlas.mitre.org</span></a>
+    </div>
+    <p style="margin-top:22px;">Related on this site: <a href="rag-agent-prompt-injection-red-team.html">Red-teaming my own RAG agent</a> · <a href="owasp-llm-top10-notes.html">Working through the OWASP LLM Top 10</a> · <a href="prompt-injection-first-principles.html">Prompt injection, from first principles</a></p>
+  </section>
+</main>
+
+<footer class="wrap">
+  Vivek Nidhi · DevSecOps &amp; AI Security Engineer ·
+  <a href="index.html">back to blog</a>
+</footer>
+
+</body>
+</html>
